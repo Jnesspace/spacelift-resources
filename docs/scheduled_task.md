@@ -1,0 +1,66 @@
+
+spacelift_scheduled_task (Resource)
+
+spacelift_scheduled_task represents a scheduling configuration for a Stack. It will trigger task on the given schedule or timestamp
+Example Usage
+
+resource "spacelift_stack" "k8s-core" {
+  // ...
+}
+
+// create the resources of a stack on a given schedule
+resource "spacelift_scheduled_task" "k8s-core-create" {
+  stack_id = spacelift_stack.k8s-core.id
+
+  command  = "terraform apply -auto-approve"
+  every    = ["0 7 * * 1-5"]
+  timezone = "CET"
+}
+
+// destroy the resources of a stack on a given schedule
+resource "spacelift_scheduled_task" "k8s-core-destroy" {
+  stack_id = spacelift_stack.k8s-core.id
+
+  command  = "terraform destroy -auto-approve"
+  every    = ["0 21 * * 1-5"]
+  timezone = "CET"
+}
+
+// at a given timestamp (unix)
+resource "spacelift_scheduled_task" "k8s-core-destroy" {
+  stack_id = spacelift_stack.k8s-core.id
+
+  command = "terraform destroy -auto-approve"
+  at      = "1663336895"
+}
+
+Schema
+Required
+
+    command (String) Command that will be run.
+    stack_id (String) ID of the stack for which to set up the scheduled task
+
+Optional
+
+    at (Number) Timestamp (unix timestamp) at which time the scheduled task should happen.
+    every (List of String) List of cron schedule expressions based on which the scheduled task should be triggered.
+    schedule_id (String) ID of the schedule
+    timezone (String) Timezone in which the schedule is expressed. Defaults to UTC.
+
+Read-Only
+
+    id (String) The ID of this resource.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_scheduled_task.ireland-kubeconfig $STACK_ID/$SCHEDULED_TASK_ID
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 

@@ -1,0 +1,57 @@
+
+spacelift_run (Resource)
+
+spacelift_run allows programmatically triggering runs in response to arbitrary changes in the keepers section.
+Example Usage
+
+resource "spacelift_stack" "this" {
+  name       = "Test stack"
+  repository = "test"
+  branch     = "main"
+}
+
+resource "spacelift_run" "this" {
+  stack_id = spacelift_stack.this.id
+
+  keepers = {
+    branch = spacelift_stack.this.branch
+  }
+}
+
+Schema
+Required
+
+    stack_id (String) ID of the stack on which the run is to be triggered.
+
+Optional
+
+    commit_sha (String) The commit SHA for which to trigger a run.
+    keepers (Map of String) Arbitrary map of values that, when changed, will trigger recreation of the resource.
+    proposed (Boolean) Whether the run is a proposed run. Defaults to false.
+    timeouts (Block, Optional) (see below for nested schema)
+    wait (Block List, Max: 1) Wait for the run to finish (see below for nested schema)
+
+Read-Only
+
+    id (String) The ID of the triggered run.
+
+Nested Schema for timeouts
+
+Optional:
+
+    create (String)
+
+Nested Schema for wait
+
+Optional:
+
+    continue_on_state (Set of String) Continue on the specified states of a finished run. If not specified, the default is [ 'finished' ]. You can use following states: applying, canceled, confirmed, destroying, discarded, failed, finished, initializing, pending_review, performing, planning, preparing_apply, preparing_replan, preparing, queued, ready, replan_requested, skipped, stopped, unconfirmed.
+    continue_on_timeout (Boolean) Continue if run timed out, i.e. did not reach any defined end state in time. Default: false
+    disabled (Boolean) Whether waiting for a job is disabled or not. Default: false
+
+On this page
+
+    Example Usage
+    Schema
+
+Report an issue 

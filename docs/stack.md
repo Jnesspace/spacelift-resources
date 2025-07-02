@@ -1,0 +1,389 @@
+
+spacelift_stack (Resource)
+
+spacelift_stack combines source code and configuration to create a runtime environment where resources are managed. In this way it's similar to a stack in AWS CloudFormation, or a project on generic CI/CD platforms.
+Example Usage
+
+# Terraform stack using github.com as VCS
+resource "spacelift_stack" "k8s-cluster" {
+  administrative    = true
+  autodeploy        = true
+  branch            = "master"
+  description       = "Provisions a Kubernetes cluster"
+  name              = "Kubernetes Cluster"
+  project_root      = "cluster"
+  repository        = "core-infra"
+  terraform_version = "1.3.0"
+}
+
+# Terraform stack using Bitbucket Cloud as VCS
+resource "spacelift_stack" "k8s-cluster-bitbucket-cloud" {
+  bitbucket_cloud {
+    namespace = "SPACELIFT" # The Bitbucket project containing the repository
+  }
+
+  administrative    = true
+  autodeploy        = true
+  branch            = "master"
+  description       = "Provisions a Kubernetes cluster"
+  name              = "Kubernetes Cluster"
+  project_root      = "cluster"
+  repository        = "core-infra"
+  terraform_version = "1.3.0"
+}
+
+# Terraform stack using Bitbucket Data Center as VCS
+resource "spacelift_stack" "k8s-cluster-bitbucket-datacenter" {
+  bitbucket_datacenter {
+    namespace = "SPACELIFT" # The Bitbucket project containing the repository
+  }
+
+  administrative    = true
+  autodeploy        = true
+  branch            = "master"
+  description       = "Provisions a Kubernetes cluster"
+  name              = "Kubernetes Cluster"
+  project_root      = "cluster"
+  repository        = "core-infra"
+  terraform_version = "1.3.0"
+}
+
+# Terraform stack using a GitHub Custom Application. See the following page for more info: https://docs.spacelift.io/integrations/source-control/github#setting-up-the-custom-application
+resource "spacelift_stack" "k8s-cluster-github-enterprise" {
+  github_enterprise {
+    namespace = "spacelift" # The GitHub organization / user the repository belongs to
+  }
+
+  administrative    = true
+  autodeploy        = true
+  branch            = "master"
+  description       = "Provisions a Kubernetes cluster"
+  name              = "Kubernetes Cluster"
+  project_root      = "cluster"
+  repository        = "core-infra"
+  terraform_version = "1.3.0"
+}
+
+# Terraform stack using GitLab as VCS
+resource "spacelift_stack" "k8s-cluster-gitlab" {
+  gitlab {
+    namespace = "spacelift" # The GitLab namespace containing the repository
+  }
+
+  administrative    = true
+  autodeploy        = true
+  branch            = "master"
+  description       = "Provisions a Kubernetes cluster"
+  name              = "Kubernetes Cluster"
+  project_root      = "cluster"
+  repository        = "core-infra"
+  terraform_version = "1.3.0"
+}
+
+# Terraform stack using github.com as VCS and enabling smart sanitization
+resource "spacelift_stack" "k8s-cluster" {
+  administrative               = true
+  autodeploy                   = true
+  branch                       = "master"
+  description                  = "Provisions a Kubernetes cluster"
+  name                         = "Kubernetes Cluster"
+  project_root                 = "cluster"
+  repository                   = "core-infra"
+  terraform_version            = "1.3.0"
+  terraform_smart_sanitization = true
+}
+
+# Terraform stack using github.com as VCS and enabling external state access
+resource "spacelift_stack" "k8s-cluster" {
+  administrative                  = true
+  autodeploy                      = true
+  branch                          = "master"
+  description                     = "Provisions a Kubernetes cluster"
+  name                            = "Kubernetes Cluster"
+  project_root                    = "cluster"
+  repository                      = "core-infra"
+  terraform_version               = "1.3.0"
+  terraform_external_state_access = true
+}
+
+# CloudFormation stack using github.com as VCS
+resource "spacelift_stack" "k8s-cluster-cloudformation" {
+  cloudformation {
+    entry_template_file = "main.yaml"
+    region              = "eu-central-1"
+    template_bucket     = "s3://bucket"
+    stack_name          = "k8s-cluster"
+  }
+
+  autodeploy   = true
+  branch       = "master"
+  description  = "Provisions a Kubernetes cluster"
+  name         = "Kubernetes Cluster"
+  project_root = "cluster"
+  repository   = "core-infra"
+}
+
+# Pulumi stack using github.com as VCS
+resource "spacelift_stack" "k8s-cluster-pulumi" {
+  pulumi {
+    login_url  = "s3://pulumi-state-bucket"
+    stack_name = "kubernetes-core-services"
+  }
+
+  autodeploy   = true
+  branch       = "master"
+  description  = "Provisions a Kubernetes cluster"
+  name         = "Kubernetes Cluster"
+  project_root = "cluster"
+  repository   = "core-infra"
+  runner_image = "public.ecr.aws/t0p9w2l5/runner-pulumi-javascript:latest"
+}
+
+# Kubernetes stack using github.com as VCS
+resource "spacelift_stack" "k8s-core-kubernetes" {
+  kubernetes {
+    namespace       = "core"
+    kubectl_version = "1.26.1" # Optional kubectl version
+  }
+
+  autodeploy   = true
+  branch       = "master"
+  description  = "Shared cluster services (Datadog, Istio etc.)"
+  name         = "Kubernetes core services"
+  project_root = "core-services"
+  repository   = "core-infra"
+
+  # You can use hooks to authenticate with your cluster
+  before_init = ["aws eks update-kubeconfig --region us-east-2 --name k8s-cluster"]
+}
+
+# Ansible stack using github.com as VCS
+resource "spacelift_stack" "ansible-stack" {
+  ansible {
+    playbook = "main.yml"
+  }
+
+  autodeploy   = true
+  branch       = "master"
+  description  = "Provisioning EC2 machines"
+  name         = "Ansible EC2 playbooks"
+  repository   = "ansible-playbooks"
+  runner_image = "public.ecr.aws/spacelift/runner-ansible:latest"
+}
+
+# Terragrunt stack using github.com as VCS
+resource "spacelift_stack" "terragrunt-stack" {
+  terragrunt {
+    terraform_version      = "1.6.2"
+    terragrunt_version     = "0.55.15"
+    use_run_all            = false
+    use_smart_sanitization = true
+    tool                   = "OPEN_TOFU"
+  }
+
+  autodeploy   = true
+  branch       = "main"
+  name         = "Terragrunt stack example"
+  description  = "Deploys infra using Terragrunt"
+  repository   = "terragrunt-stacks"
+  project_root = "path/to/terragrunt_hcl"
+}
+
+Schema
+Required
+
+    branch (String) Git branch to apply changes to
+    name (String) Name of the stack - should be unique in one account
+    repository (String) Name of the repository, without the owner part
+
+Optional
+
+    additional_project_globs (Set of String) Project globs is an optional list of paths to track changes of in addition to the project root.
+    administrative (Boolean) Indicates whether this stack can manage others. Defaults to false.
+    after_apply (List of String) List of after-apply scripts
+    after_destroy (List of String) List of after-destroy scripts
+    after_init (List of String) List of after-init scripts
+    after_perform (List of String) List of after-perform scripts
+    after_plan (List of String) List of after-plan scripts
+    after_run (List of String) List of after-run scripts
+    ansible (Block List, Max: 1) Ansible-specific configuration. Presence means this Stack is an Ansible Stack. (see below for nested schema)
+    autodeploy (Boolean) Indicates whether changes to this stack can be automatically deployed. Defaults to false.
+    autoretry (Boolean) Indicates whether obsolete proposed changes should automatically be retried. Defaults to false.
+    azure_devops (Block List, Max: 1) Azure DevOps VCS settings (see below for nested schema)
+    before_apply (List of String) List of before-apply scripts
+    before_destroy (List of String) List of before-destroy scripts
+    before_init (List of String) List of before-init scripts
+    before_perform (List of String) List of before-perform scripts
+    before_plan (List of String) List of before-plan scripts
+    bitbucket_cloud (Block List, Max: 1) Bitbucket Cloud VCS settings (see below for nested schema)
+    bitbucket_datacenter (Block List, Max: 1) Bitbucket Datacenter VCS settings (see below for nested schema)
+    cloudformation (Block List, Max: 1) CloudFormation-specific configuration. Presence means this Stack is a CloudFormation Stack. (see below for nested schema)
+    description (String) Free-form stack description for users
+    enable_local_preview (Boolean) Indicates whether local preview runs can be triggered on this Stack. Defaults to false.
+    enable_sensitive_outputs_upload (Boolean) Indicates whether sensitive outputs created by this stack can be uploaded to Spacelift to be used by Stack Dependency references. Triggered only when corresponding option is enabled on the Worker Pool used by the Stack as well. Defaults to true.
+    enable_well_known_secret_masking (Boolean) Indicates whether well-known secret masking is enabled.
+    github_action_deploy (Boolean) Indicates whether GitHub users can deploy from the Checks API. Defaults to true. This is called allow run promotion in the UI.
+    github_enterprise (Block List, Max: 1) VCS settings for GitHub custom application (see below for nested schema)
+    gitlab (Block List, Max: 1) GitLab VCS settings (see below for nested schema)
+    import_state (String, Sensitive) State file to upload when creating a new stack
+    import_state_file (String) Path to the state file to upload when creating a new stack
+    kubernetes (Block List, Max: 1) Kubernetes-specific configuration. Presence means this Stack is a Kubernetes Stack. (see below for nested schema)
+    labels (Set of String)
+    manage_state (Boolean) Determines if Spacelift should manage state for this stack. Defaults to true.
+    project_root (String) Project root is the optional directory relative to the workspace root containing the entrypoint to the Stack.
+    protect_from_deletion (Boolean) Protect this stack from accidental deletion. If set, attempts to delete this stack will fail. Defaults to false.
+    pulumi (Block List, Max: 1) Pulumi-specific configuration. Presence means this Stack is a Pulumi Stack. (see below for nested schema)
+    raw_git (Block List, Max: 1) One-way VCS integration using a raw Git repository link (see below for nested schema)
+    runner_image (String) Name of the Docker image used to process Runs
+    showcase (Block List, Max: 1) (see below for nested schema)
+    slug (String) Allows setting the custom ID (slug) for the stack
+    space_id (String) ID (slug) of the space the stack is in. Defaults to legacy if it exists, otherwise root.
+    terraform_external_state_access (Boolean) Indicates whether you can access the Stack state file from other stacks or outside of Spacelift. Defaults to false.
+    terraform_smart_sanitization (Boolean) Indicates whether runs on this will use terraform's sensitive value system to sanitize the outputs of Terraform state and plans in spacelift instead of sanitizing all fields. Note: Requires the terraform version to be v1.0.1 or above. Defaults to false.
+    terraform_version (String) Terraform version to use
+    terraform_workflow_tool (String) Defines the tool that will be used to execute the workflow. This can be one of OPEN_TOFU, TERRAFORM_FOSS or CUSTOM. Defaults to TERRAFORM_FOSS.
+    terraform_workspace (String) Terraform workspace to select
+    terragrunt (Block List, Max: 1) Terragrunt-specific configuration. Presence means this Stack is an Terragrunt Stack. (see below for nested schema)
+    worker_pool_id (String) ID of the worker pool to use. NOTE: worker_pool_id is required when using a self-hosted instance of Spacelift.
+
+Read-Only
+
+    aws_assume_role_policy_statement (String) AWS IAM assume role policy statement setting up trust relationship
+    id (String) The ID of this resource.
+
+Nested Schema for ansible
+
+Required:
+
+    playbook (String) The playbook Ansible should run.
+
+Nested Schema for azure_devops
+
+Required:
+
+    project (String) The name of the Azure DevOps project
+
+Optional:
+
+    id (String) The ID of the Azure Devops integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default Azure DevOps integration
+
+Nested Schema for bitbucket_cloud
+
+Required:
+
+    namespace (String) The Bitbucket project containing the repository
+
+Optional:
+
+    id (String) The ID of the Bitbucket Cloud integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default Bitbucket Cloud integration
+
+Nested Schema for bitbucket_datacenter
+
+Required:
+
+    namespace (String) The Bitbucket project containing the repository
+
+Optional:
+
+    id (String) The ID of the Bitbucket Datacenter integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default Bitbucket Datacenter integration
+
+Nested Schema for cloudformation
+
+Required:
+
+    entry_template_file (String) Template file cloudformation package will be called on
+    region (String) AWS region to use
+    stack_name (String) CloudFormation stack name
+    template_bucket (String) S3 bucket to save CloudFormation templates to
+
+Nested Schema for github_enterprise
+
+Required:
+
+    namespace (String) The GitHub organization / user the repository belongs to
+
+Optional:
+
+    id (String) The ID of the GitHub Enterprise integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default GitHub Enterprise integration
+
+Nested Schema for gitlab
+
+Required:
+
+    namespace (String) The GitLab namespace containing the repository
+
+Optional:
+
+    id (String) The ID of the Gitlab integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default GitLab integration
+
+Nested Schema for kubernetes
+
+Optional:
+
+    kubectl_version (String) Kubectl version.
+    kubernetes_workflow_tool (String) Defines the tool that will be used to execute the workflow. This can be one of KUBERNETES or CUSTOM. Defaults to KUBERNETES.
+    namespace (String) Namespace of the Kubernetes cluster to run commands on. Leave empty for multi-namespace Stacks.
+
+Nested Schema for pulumi
+
+Required:
+
+    login_url (String) State backend to log into on Run initialize.
+    stack_name (String) Pulumi stack name to use with the state backend.
+
+Nested Schema for raw_git
+
+Required:
+
+    namespace (String) User-friendly namespace for the repository, this is for cosmetic purposes only
+    url (String) HTTPS URL of the Git repository
+
+Nested Schema for showcase
+
+Required:
+
+    namespace (String)
+
+Nested Schema for terragrunt
+
+Optional:
+
+    terraform_version (String) The Terraform version. Must not be provided when tool is set to MANUALLY_PROVISIONED. Defaults to the latest available OpenTofu/Terraform version.
+    terragrunt_version (String) The Terragrunt version. Defaults to the latest Terragrunt version.
+    tool (String) The IaC tool used by Terragrunt. Valid values are OPEN_TOFU, TERRAFORM_FOSS or MANUALLY_PROVISIONED. Defaults to TERRAFORM_FOSS if not specified.
+    use_run_all (Boolean) Whether to use terragrunt run-all instead of terragrunt.
+    use_smart_sanitization (Boolean) Indicates whether runs on this will use Terraform's sensitive value system to sanitize the outputs of Terraform state and plans in spacelift instead of sanitizing all fields.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_stack.k8s_core $STACK_ID
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 

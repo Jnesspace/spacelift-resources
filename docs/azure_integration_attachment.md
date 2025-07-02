@@ -1,0 +1,54 @@
+spacelift_azure_integration_attachment (Resource)
+
+spacelift_azure_integration_attachment represents the attachment between a reusable Azure integration and a single stack or module.
+Example Usage
+
+# For a stack
+resource "spacelift_azure_integration_attachment" "readonly" {
+  integration_id  = spacelift_azure_integration.example.id
+  stack_id        = spacelift_stack.example.id
+  write           = false
+  subscription_id = "subscription_id"
+}
+
+# For a module
+resource "spacelift_azure_integration_attachment" "writeonly" {
+  integration_id  = spacelift_azure_integration.example.id
+  stack_id        = spacelift_module.example.id
+  read            = false
+  subscription_id = "subscription_id"
+}
+
+Schema
+Required
+
+    integration_id (String) ID of the integration to attach
+
+Optional
+
+    module_id (String) ID of the module to attach the integration to
+    read (Boolean) Indicates whether this attachment is used for read operations. Defaults to true.
+    stack_id (String) ID of the stack to attach the integration to
+    subscription_id (String) Contains the Azure subscription ID to use with this Stack. Overrides the default subscription ID set at the integration level.
+    write (Boolean) Indicates whether this attachment is used for write operations. Defaults to true.
+
+Read-Only
+
+    attachment_id (String) Internal ID of the attachment entity
+    id (String) The ID of this resource.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_azure_integration_attachment.readonly $INTEGRATION_ID/$STACK_ID
+
+terraform import spacelift_azure_integration_attachment.writeonly $INTEGRATION_ID/$MODULE_ID
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 

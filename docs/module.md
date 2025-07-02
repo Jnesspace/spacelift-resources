@@ -1,0 +1,148 @@
+
+spacelift_module (Resource)
+
+spacelift_module is a special type of a stack used to test and version Terraform modules.
+Example Usage
+
+# Explicit module name and provider:
+resource "spacelift_module" "k8s-module" {
+  name               = "k8s-module"
+  terraform_provider = "aws"
+  administrative     = true
+  branch             = "master"
+  description        = "Infra terraform module"
+  repository         = "terraform-super-module"
+}
+
+# Unspecified module name and provider (repository naming scheme terraform-${provider}-${name})
+resource "spacelift_module" "example-module" {
+  administrative = true
+  branch         = "master"
+  description    = "Example terraform module"
+  repository     = "terraform-aws-example"
+  project_root   = "example"
+}
+
+Schema
+Required
+
+    branch (String) GitHub branch to apply changes to
+    repository (String) Name of the repository, without the owner part
+
+Optional
+
+    administrative (Boolean) Indicates whether this module can manage others. Defaults to false.
+    azure_devops (Block List, Max: 1) Azure DevOps VCS settings (see below for nested schema)
+    bitbucket_cloud (Block List, Max: 1) Bitbucket Cloud VCS settings (see below for nested schema)
+    bitbucket_datacenter (Block List, Max: 1) Bitbucket Datacenter VCS settings (see below for nested schema)
+    description (String) Free-form module description for users
+    enable_local_preview (Boolean) Indicates whether local preview versions can be triggered on this Module. Defaults to false.
+    github_enterprise (Block List, Max: 1) GitHub Enterprise (self-hosted) VCS settings (see below for nested schema)
+    gitlab (Block List, Max: 1) GitLab VCS settings (see below for nested schema)
+    labels (Set of String)
+    name (String) The module name will by default be inferred from the repository name if it follows the terraform-provider-name naming convention. However, if the repository doesn't follow this convention, or you want to give it a custom name, you can provide it here.
+    project_root (String) Project root is the optional directory relative to the repository root containing the module source code.
+    protect_from_deletion (Boolean) Protect this module from accidental deletion. If set, attempts to delete this module will fail. Defaults to false.
+    public (Boolean) Make this module publicly accessible. Can only be set at creation time. Defaults to false.
+    raw_git (Block List, Max: 1) One-way VCS integration using a raw Git repository link (see below for nested schema)
+    shared_accounts (Set of String) List of the accounts (subdomains) which should have access to the Module
+    space_id (String) ID (slug) of the space the module is in
+    terraform_provider (String) The module provider will by default be inferred from the repository name if it follows the terraform-provider-name naming convention. However, if the repository doesn't follow this convention, or you gave the module a custom name, you can provide the provider name here.
+    worker_pool_id (String) ID of the worker pool to use. NOTE: worker_pool_id is required when using a self-hosted instance of Spacelift.
+    workflow_tool (String) Defines the tool that will be used to execute the workflow. This can be one of OPEN_TOFU, TERRAFORM_FOSS or CUSTOM. Defaults to TERRAFORM_FOSS.
+
+Read-Only
+
+    aws_assume_role_policy_statement (String) AWS IAM assume role policy statement setting up trust relationship
+    id (String) The ID of this resource.
+
+Nested Schema for azure_devops
+
+Required:
+
+    project (String) The name of the Azure DevOps project
+
+Optional:
+
+    id (String) ID of the Azure Devops integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default Azure DevOps integration
+
+Nested Schema for bitbucket_cloud
+
+Required:
+
+    namespace (String) The Bitbucket project containing the repository
+
+Optional:
+
+    id (String) The ID of the Bitbucket Cloud integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default Bitbucket Cloud integration
+
+Nested Schema for bitbucket_datacenter
+
+Required:
+
+    namespace (String) The Bitbucket project containing the repository
+
+Optional:
+
+    id (String) The ID of the Bitbucket Datacenter integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default Bitbucket Datacenter integration
+
+Nested Schema for github_enterprise
+
+Required:
+
+    namespace (String) The GitHub organization / user the repository belongs to
+
+Optional:
+
+    id (String) The ID of the GitHub Enterprise integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default GitHub Enterprise integration
+
+Nested Schema for gitlab
+
+Required:
+
+    namespace (String) The GitLab namespace containing the repository
+
+Optional:
+
+    id (String) ID of the Gitlab integration. If not specified, the default integration will be used.
+
+Read-Only:
+
+    is_default (Boolean) Indicates whether this is the default GitLab integration
+
+Nested Schema for raw_git
+
+Required:
+
+    namespace (String) User-friendly namespace for the repository, this is for cosmetic purposes only
+    url (String) HTTPS URL of the Git repository
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_module.k8s-module $MODULE_ID
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 

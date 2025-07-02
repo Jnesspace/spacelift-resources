@@ -1,0 +1,63 @@
+
+spacelift_mounted_file (Resource)
+
+spacelift_mounted_file represents a file mounted in each Run's workspace that is part of a configuration of a context (spacelift_context), stack (spacelift_stack) or a module (spacelift_module). In principle, it's very similar to an environment variable (spacelift_environment_variable) except that the value is written to the filesystem rather than passed to the environment.
+Example Usage
+
+# For a context
+resource "spacelift_mounted_file" "ireland-kubeconfig" {
+  context_id    = "prod-k8s-ie"
+  relative_path = "kubeconfig"
+  content       = filebase64("${path.module}/kubeconfig.json")
+}
+
+# For a module
+resource "spacelift_mounted_file" "module-kubeconfig" {
+  module_id     = "k8s-module"
+  relative_path = "kubeconfig"
+  content       = filebase64("${path.module}/kubeconfig.json")
+}
+
+# For a stack
+resource "spacelift_mounted_file" "core-kubeconfig" {
+  stack_id      = "k8s-core"
+  relative_path = "kubeconfig"
+  content       = filebase64("${path.module}/kubeconfig.json")
+}
+
+Schema
+Required
+
+    content (String, Sensitive) Content of the mounted file encoded using Base-64
+    relative_path (String) Relative path to the mounted file, without the /mnt/workspace/ prefix
+
+Optional
+
+    context_id (String) ID of the context on which the mounted file is defined
+    description (String) Free-form description of the mounted file
+    module_id (String) ID of the module on which the mounted file is defined
+    stack_id (String) ID of the stack on which the mounted file is defined
+    write_only (Boolean) Indicates whether the content can be read back outside a Run. Defaults to true.
+
+Read-Only
+
+    checksum (String) SHA-256 checksum of the value
+    id (String) The ID of this resource.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_mounted_file.ireland-kubeconfig context/$CONTEXT_ID/$MOUNTED_FILE_ID
+
+terraform import spacelift_mounted_file.module-kubeconfig module/$MODULE_ID/$MOUNTED_FILE_ID
+
+terraform import spacelift_mounted_file.core-kubeconfig stack/$STACK_ID/$MOUNTED_FILE_ID
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 

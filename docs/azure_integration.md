@@ -1,0 +1,46 @@
+
+spacelift_azure_integration (Resource)
+
+spacelift_azure_integration represents an integration with an Azure AD tenant. This integration is account-level and needs to be explicitly attached to individual stacks in order to take effect. Note that you will need to provide admin consent manually for the integration to work
+Example Usage
+
+resource "spacelift_azure_integration" "example" {
+  name                    = "Example integration"
+  tenant_id               = "tenant-id"
+  default_subscription_id = "default-subscription-id"
+  labels                  = ["one", "two"]
+}
+
+Schema
+Required
+
+    name (String) The friendly name of the integration
+    tenant_id (String) The Azure AD tenant ID
+
+Optional
+
+    default_subscription_id (String) The default subscription ID to use, if one isn't specified at the stack/module level
+    labels (Set of String) Labels to set on the integration
+    space_id (String) ID (slug) of the space the integration is in
+
+Read-Only
+
+    admin_consent_provided (Boolean) Indicates whether admin consent has been performed for the AAD Application.
+    admin_consent_url (String) The URL to use to provide admin consent to the application in the customer's tenant
+    application_id (String) The applicationId of the Azure AD application used by the integration.
+    display_name (String) The display name for the application in Azure. This is automatically generated when the integration is created, and cannot be changed without deleting and recreating the integration.
+    id (String) The ID of this resource.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_azure_integration.example $INTEGRATION_ID
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 

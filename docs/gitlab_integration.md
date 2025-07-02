@@ -1,0 +1,57 @@
+
+spacelift_gitlab_integration (Resource)
+
+spacelift_gitlab_integration represents an integration with a GitLab instance
+Example Usage
+
+resource "spacelift_gitlab_integration" "example" {
+  name             = "GitLab integration (public)"
+  space_id         = "root"
+  api_host         = "https://mygitlab.myorg.com"
+  user_facing_host = "https://mygitlab.myorg.com"
+  private_token    = "gitlab-token"
+}
+
+resource "spacelift_gitlab_integration" "private-example" {
+  name             = "GitLab integration (private)"
+  is_default       = true
+  api_host         = "private://mygitlab"
+  user_facing_host = "https://mygitlab.myorg.com"
+  private_token    = "gitlab-token"
+}
+
+Schema
+Required
+
+    api_host (String) API host URL
+    name (String) The friendly name of the integration
+    private_token (String, Sensitive) The GitLab API Token
+    user_facing_host (String) User facing host URL.
+
+Optional
+
+    description (String) Description of the integration
+    is_default (Boolean) Is the GitLab integration the default for all spaces? If set to true the space must be set to root in space_id or left empty which uses the default
+    labels (Set of String) Labels to set on the integration
+    space_id (String) ID (slug) of the space the integration is in; Default: root
+    vcs_checks (String) VCS checks configured for GitLab repositories. Possible values: INDIVIDUAL, AGGREGATED, ALL. Defaults to INDIVIDUAL.
+
+Read-Only
+
+    id (String) GitLab integration id.
+    webhook_secret (String, Sensitive) Secret for webhooks originating from GitLab repositories
+    webhook_url (String) URL for webhooks originating from GitLab repositories
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_gitlab_integration.example spacelift_gitlab_integration_id
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 

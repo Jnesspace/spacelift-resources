@@ -1,0 +1,47 @@
+spacelift_context_attachment (Resource)
+
+spacelift_context_attachment represents a Spacelift attachment of a single context to a single stack or module, with a predefined priority.
+Example Usage
+
+# For a stack
+resource "spacelift_context_attachment" "attachment" {
+  context_id = "prod-k8s-ie"
+  stack_id   = "k8s-core"
+  priority   = 0
+}
+
+# For a module
+resource "spacelift_context_attachment" "attachment" {
+  context_id = "prod-k8s-ie"
+  module_id  = "k8s-module"
+  priority   = 0
+}
+
+Schema
+Required
+
+    context_id (String) ID of the context to attach
+
+Optional
+
+    module_id (String) ID of the module to attach the context to
+    priority (Number) Priority of the context attachment. All the contexts attached to a stack are sorted by priority (lowest first), though values don't need to be unique. This ordering establishes precedence rules between contexts should there be a conflict and multiple contexts define the same value. Defaults to 0.
+    stack_id (String) ID of the stack to attach the context to
+
+Read-Only
+
+    id (String) The ID of this resource.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_context_attachment.test_stack $CONTEXT_ID/$STACK_ID
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 

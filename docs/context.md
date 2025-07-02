@@ -1,0 +1,41 @@
+spacelift_context (Resource)
+
+spacelift_context represents a Spacelift context - a collection of configuration elements (either environment variables or mounted files) that can be administratively attached to multiple stacks (spacelift_stack) or modules (spacelift_module) using a context attachment (spacelift_context_attachment)`
+Example Usage
+
+resource "spacelift_context" "prod-k8s-ie" {
+  description = "Configuration details for the compute cluster in 🇮🇪"
+  name        = "Production cluster (Ireland)"
+}
+
+Schema
+Required
+
+    name (String) Name of the context - should be unique in one account
+
+Optional
+
+    after_apply (List of String) List of after-apply scripts
+    after_destroy (List of String) List of after-destroy scripts
+    after_init (List of String) List of after-init scripts
+    after_perform (List of String) List of after-perform scripts
+    after_plan (List of String) List of after-plan scripts
+    after_run (List of String) List of after-run scripts
+    before_apply (List of String) List of before-apply scripts
+    before_destroy (List of String) List of before-destroy scripts
+    before_init (List of String) List of before-init scripts
+    before_perform (List of String) List of before-perform scripts
+    before_plan (List of String) List of before-plan scripts
+    description (String) Free-form context description for users
+    labels (Set of String) The labels of the context. To leverage the autoattach magic label, ensure your label follows the naming convention: autoattach:<your-label-name>
+    space_id (String) ID (slug) of the space the context is in
+
+Read-Only
+
+    id (String) The ID of this resource.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_context.prod-k8s-ie $CONTEXT_ID

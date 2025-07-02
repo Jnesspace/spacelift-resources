@@ -1,0 +1,24 @@
+
+spacelift_version (Resource)
+
+spacelift_version allows to programmatically trigger a module version creation in response to arbitrary changes in the keepers section.
+Schema
+Required
+
+    module_id (String) ID of the module on which the version creation is to be triggered.
+
+Optional
+
+    commit_sha (String) The commit SHA for which to trigger a version.
+    keepers (Map of String) Arbitrary map of values that, when changed, will trigger recreation of the resource.
+    version_number (String) A semantic version number to set for the triggered version, example: 0.11.2
+
+Read-Only
+
+    id (String) The ID of the triggered version.
+
+On this page
+
+    Schema
+
+Report an issue 

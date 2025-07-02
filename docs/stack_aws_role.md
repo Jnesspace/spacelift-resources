@@ -1,0 +1,80 @@
+
+spacelift_stack_aws_role (Resource)
+Note:
+
+spacelift_stack_aws_role is deprecated. Please use spacelift_aws_role instead. The functionality is identical.
+
+NOTE: while this resource continues to work, we have replaced it with the spacelift_aws_integration resource. The new resource allows integrations to be shared by multiple stacks/modules and also supports separate read vs write roles. Please use the spacelift_aws_integration resource instead.
+
+spacelift_stack_aws_role represents cross-account IAM role delegation between the Spacelift worker and an individual stack or module. If this is set, Spacelift will use AWS STS to assume the supplied IAM role and put its temporary credentials in the runtime environment.
+
+If you use private workers, you can also assume IAM role on the worker side using your own AWS credentials (e.g. from EC2 instance profile).
+
+Note: when assuming credentials for shared worker, Spacelift will use $accountName@$stackID or $accountName@$moduleID as external ID and $runID@$stackID@$accountName truncated to 64 characters as session ID.
+Example Usage
+
+# Assuming the role in Spacelift
+resource "aws_iam_role" "spacelift" {
+  name = "spacelift"
+
+  assume_role_policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [jsondecode(spacelift_stack.k8s-core.aws_assume_role_policy_statement)]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "spacelift" {
+  role       = aws_iam_role.spacelift.name
+  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
+}
+
+# Role assumed by a Stack
+resource "spacelift_stack_aws_role" "spacelift-stack" {
+  stack_id = "k8s-core"
+  role_arn = aws_iam_role.spacelift.arn
+}
+
+# Role assumed by a Module
+resource "spacelift_stack_aws_role" "spacelift-module" {
+  module_id = "k8s-core"
+  role_arn  = aws_iam_role.spacelift.arn
+}
+
+# Assuming the role in the private worker, for a stack.
+resource "spacelift_stack_aws_role" "k8s-core" {
+  stack_id                       = "k8s-core"
+  role_arn                       = "arn:aws:iam::123456789012:custom/role"
+  generate_credentials_in_worker = true
+}
+
+# Assuming the role in the private worker, for a module.
+resource "spacelift_stack_aws_role" "k8s-core" {
+  module_id                      = "k8s-core"
+  role_arn                       = "arn:aws:iam::123456789012:custom/role"
+  generate_credentials_in_worker = true
+}
+
+Schema
+Required
+
+    role_arn (String) ARN of the AWS IAM role to attach
+
+Optional
+
+    duration_seconds (Number) AWS IAM role session duration in seconds
+    external_id (String) Custom external ID (works only for private workers).
+    generate_credentials_in_worker (Boolean) Generate AWS credentials in the private worker. Defaults to false.
+    module_id (String) ID of the module which assumes the AWS IAM role
+    region (String) AWS region to select a regional AWS STS endpoint.
+    stack_id (String) ID of the stack which assumes the AWS IAM role
+
+Read-Only
+
+    id (String) The ID of this resource.
+
+On this page
+
+    Example Usage
+    Schema
+
+Report an issue 

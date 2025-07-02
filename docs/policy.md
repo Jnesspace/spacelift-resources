@@ -1,0 +1,44 @@
+spacelift_policy (Resource)
+
+spacelift_policy represents a Spacelift policy - a collection of customer-defined rules that are applied by Spacelift at one of the decision points within the application.
+Example Usage
+
+resource "spacelift_policy" "no-weekend-deploys" {
+  name = "Let's not deploy any changes over the weekend"
+  body = file("${path.module}/policies/no-weekend-deploys.rego")
+  type = "PLAN"
+}
+
+resource "spacelift_stack" "core-infra-production" {
+  name       = "Core Infrastructure (production)"
+  branch     = "master"
+  repository = "core-infra"
+}
+
+resource "spacelift_policy_attachment" "no-weekend-deploys" {
+  policy_id = spacelift_policy.no-weekend-deploys.id
+  stack_id  = spacelift_stack.core-infra-production.id
+}
+
+Schema
+Required
+
+    body (String) Body of the policy
+    name (String) Name of the policy - should be unique in one account
+    type (String) Type of the policy. Possible values are ACCESS, APPROVAL, GIT_PUSH, INITIALIZATION, LOGIN, PLAN, TASK, TRIGGER and NOTIFICATION. Deprecated values are STACK_ACCESS (use ACCESS instead), TASK_RUN (use TASK instead), and TERRAFORM_PLAN (use PLAN instead).
+
+Optional
+
+    description (String) Description of the policy
+    labels (Set of String)
+    space_id (String) ID (slug) of the space the policy is in
+
+Read-Only
+
+    id (String) The ID of this resource.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_policy.no-weekend-deploys $POLICY_ID

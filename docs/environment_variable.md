@@ -1,0 +1,69 @@
+
+spacelift_environment_variable (Resource)
+
+spacelift_environment_variable defines an environment variable on the context (spacelift_context), stack (spacelift_stack) or a module (spacelift_module), thereby allowing to pass and share various secrets and configuration with Spacelift stacks.
+Example Usage
+
+# For a context
+resource "spacelift_environment_variable" "ireland-kubeconfig" {
+  context_id  = "prod-k8s-ie"
+  name        = "KUBECONFIG"
+  value       = "/project/spacelift/kubeconfig"
+  write_only  = false
+  description = "Kubeconfig for Ireland Kubernetes cluster"
+}
+
+# For a module
+resource "spacelift_environment_variable" "module-kubeconfig" {
+  module_id   = "k8s-module"
+  name        = "KUBECONFIG"
+  value       = "/project/spacelift/kubeconfig"
+  write_only  = false
+  description = "Kubeconfig for the module"
+}
+
+# For a stack
+resource "spacelift_environment_variable" "core-kubeconfig" {
+  stack_id    = "k8s-core"
+  name        = "KUBECONFIG"
+  value       = "/project/spacelift/kubeconfig"
+  write_only  = false
+  description = "Kubeconfig for the core stack"
+}
+
+Schema
+Required
+
+    name (String) Name of the environment variable
+
+Optional
+
+    context_id (String) ID of the context on which the environment variable is defined
+    description (String) Description of the environment variable
+    module_id (String) ID of the module on which the environment variable is defined
+    stack_id (String) ID of the stack on which the environment variable is defined
+    value (String, Sensitive) Value of the environment variable. Defaults to an empty string.
+    write_only (Boolean) Indicates whether the value is secret or not. Defaults to true.
+
+Read-Only
+
+    checksum (String) SHA-256 checksum of the value
+    id (String) The ID of this resource.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_environment_variable.ireland-kubeconfig context/$CONTEXT_ID/$ENVIRONMENT_VARIABLE_NAME
+
+terraform import spacelift_environment_variable.module-kubeconfig module/$MODULE_ID/$ENVIRONMENT_VARIABLE_NAME
+
+terraform import spacelift_environment_variable.core-kubeconfig stack/$STACK_ID/$ENVIRONMENT_VARIABLE_NAME
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 

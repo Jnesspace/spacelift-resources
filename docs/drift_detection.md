@@ -1,0 +1,49 @@
+
+spacelift_drift_detection (Resource)
+
+spacelift_drift_detection represents a Drift Detection configuration for a Stack. It will trigger a proposed run on the given schedule, which you can listen for using run state webhooks. If reconcile is true, then a tracked run will be triggered when drift is detected.
+Example Usage
+
+resource "spacelift_stack" "core-infra-production" {
+  name       = "Core Infrastructure (production)"
+  branch     = "master"
+  repository = "core-infra"
+}
+
+resource "spacelift_drift_detection" "core-infra-production-drift-detection" {
+  reconcile = true
+  stack_id  = spacelift_stack.core-infra-production.id
+  schedule  = ["*/15 * * * *"] # Every 15 minutes
+}
+
+Schema
+Required
+
+    schedule (List of String) List of cron schedule expressions based on which drift detection should be triggered.
+    stack_id (String) ID of the stack for which to set up drift detection
+
+Optional
+
+    ignore_state (Boolean) Controls whether drift detection should be performed on a stack in any final state instead of just 'Finished'.
+    reconcile (Boolean) Whether a tracked run should be triggered when drift is detected.
+    timezone (String) Timezone in which the schedule is expressed. Defaults to UTC.
+
+Read-Only
+
+    id (String) The ID of this resource.
+
+Import
+
+Import is supported using the following syntax:
+
+terraform import spacelift_drift_detection.core-infra-production-drift-detection stack/$STACK_ID
+
+terraform import spacelift_drift_detection.core-infra-production-drift-detection module/$MODULE_ID
+
+On this page
+
+    Example Usage
+    Schema
+    Import
+
+Report an issue 
