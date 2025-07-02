@@ -82,4 +82,100 @@ On this page
     Schema
     Import
 
-Report an issue 
+Report an issue
+
+METADATA:
+  resource_type: spacelift_aws_role
+  provider: spacelift
+  service: cloud_integration
+  description: AWS IAM role delegation for Spacelift workers
+  version: latest
+  deprecation_notice: Use spacelift_aws_integration instead for improved functionality
+
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_aws_role" "RESOURCE_NAME" {
+  role_arn = IAM_ROLE_ARN
+  # One of the following must be set:
+  stack_id  = STACK_ID    # Optional if module_id is set
+  module_id = MODULE_ID   # Optional if stack_id is set
+  
+  # Optional configuration:
+  generate_credentials_in_worker = false  # For private workers
+  duration_seconds = 3600               # Session duration
+  external_id = "custom-id"            # For private workers
+  region = "us-west-2"                # AWS region for STS
+}
+```
+
+ATTRIBUTES:
+  required:
+    role_arn:
+      type: String
+      description: AWS IAM role ARN to assume
+      validation: Must be valid ARN format
+
+  optional:
+    stack_id:
+      type: String
+      description: Target stack identifier
+      validation: Must exist if module_id not set
+      note: Mutually exclusive with module_id
+      
+    module_id:
+      type: String
+      description: Target module identifier
+      validation: Must exist if stack_id not set
+      note: Mutually exclusive with stack_id
+      
+    generate_credentials_in_worker:
+      type: Boolean
+      description: Generate credentials in private worker
+      default: false
+      applies_to: Private workers only
+      
+    duration_seconds:
+      type: Number
+      description: Role session duration
+      validation: Valid session duration
+      
+    external_id:
+      type: String
+      description: Custom external ID
+      applies_to: Private workers only
+      
+    region:
+      type: String
+      description: AWS region for STS endpoint
+      validation: Valid AWS region name
+
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
+
+BEHAVIOR:
+  session:
+    shared_workers:
+      external_id: "$accountName@$stackID" or "$accountName@$moduleID"
+      session_id: "$runID@$stackID@$accountName" (max 64 chars)
+    
+    private_workers:
+      - Can use custom external ID
+      - Uses worker's AWS credentials
+      - Supports regional endpoints
+    
+  credentials:
+    - Temporary STS credentials
+    - Configurable session duration
+    - Available in runtime environment
+    
+  limitations:
+    - Deprecated in favor of aws_integration
+    - One role per stack/module
+    - No separate read/write roles
+
+IMPORT_FORMAT:
+  stack: stack/$STACK_ID
+  module: module/$MODULE_ID

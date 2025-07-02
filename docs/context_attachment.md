@@ -44,4 +44,78 @@ On this page
     Schema
     Import
 
-Report an issue 
+Report an issue
+
+METADATA:
+  resource_type: spacelift_context_attachment
+  provider: spacelift
+  service: configuration
+  description: Links contexts to stacks or modules with priority ordering
+  version: latest
+
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_context_attachment" "RESOURCE_NAME" {
+  context_id = CONTEXT_ID
+  # One of the following must be set:
+  stack_id   = STACK_ID    # Optional if module_id is set
+  module_id  = MODULE_ID   # Optional if stack_id is set
+  priority   = 0          # Optional, defaults to 0
+}
+```
+
+ATTRIBUTES:
+  required:
+    context_id:
+      type: String
+      description: Context to attach
+      validation: Must exist in Spacelift
+
+  optional:
+    stack_id:
+      type: String
+      description: Target stack identifier
+      validation: Must exist if module_id not set
+      note: Mutually exclusive with module_id
+      
+    module_id:
+      type: String
+      description: Target module identifier
+      validation: Must exist if stack_id not set
+      note: Mutually exclusive with stack_id
+      
+    priority:
+      type: Number
+      description: Attachment priority order
+      default: 0
+      note: Lower values processed first
+
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
+
+BEHAVIOR:
+  priority:
+    - Determines context processing order
+    - Lower numbers processed first
+    - Values don't need to be unique
+    - Used to resolve configuration conflicts
+    
+  attachment:
+    - One context per attachment
+    - One attachment per context-target pair
+    - Target must be stack or module
+    
+  inheritance:
+    - Configuration inherited by target
+    - Priority affects conflict resolution
+    - Later contexts override earlier ones
+    
+  validation:
+    - Context must exist
+    - Target must exist
+    - Cannot attach to both stack and module
+
+IMPORT_FORMAT: $CONTEXT_ID/$STACK_ID

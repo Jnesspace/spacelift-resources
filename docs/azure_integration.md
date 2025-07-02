@@ -1,46 +1,98 @@
+# spacelift_azure_integration
 
-spacelift_azure_integration (Resource)
+METADATA:
+  resource_type: spacelift_azure_integration
+  provider: spacelift
+  service: cloud_integration
+  description: Azure AD tenant integration for Spacelift resource management
+  version: latest
 
-spacelift_azure_integration represents an integration with an Azure AD tenant. This integration is account-level and needs to be explicitly attached to individual stacks in order to take effect. Note that you will need to provide admin consent manually for the integration to work
-Example Usage
-
-resource "spacelift_azure_integration" "example" {
-  name                    = "Example integration"
-  tenant_id               = "tenant-id"
-  default_subscription_id = "default-subscription-id"
-  labels                  = ["one", "two"]
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_azure_integration" "RESOURCE_NAME" {
+  name                    = INTEGRATION_NAME
+  tenant_id               = AZURE_TENANT_ID
+  default_subscription_id = SUBSCRIPTION_ID
+  labels                  = [LABEL_VALUES]
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Friendly identifier for the integration
+      validation: none
+    
+    tenant_id:
+      type: String
+      description: Azure AD tenant identifier
+      validation: Valid UUID format
 
-    name (String) The friendly name of the integration
-    tenant_id (String) The Azure AD tenant ID
+  optional:
+    default_subscription_id:
+      type: String
+      description: Default Azure subscription for resource management
+      validation: Valid UUID format
+    
+    labels:
+      type: Set[String]
+      description: Resource classification tags
+      default: []
+      validation: none
+    
+    space_id:
+      type: String
+      description: Target space identifier
+      validation: Must exist in Spacelift
 
-Optional
+  computed:
+    admin_consent_provided:
+      type: Boolean
+      description: Confirmation of admin consent status
+      generated: true
+    
+    admin_consent_url:
+      type: String
+      description: URL for granting admin consent
+      generated: true
+    
+    application_id:
+      type: String
+      description: Azure AD application identifier
+      generated: true
+    
+    display_name:
+      type: String
+      description: Auto-generated Azure application name
+      generated: true
+      immutable: true
+    
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    default_subscription_id (String) The default subscription ID to use, if one isn't specified at the stack/module level
-    labels (Set of String) Labels to set on the integration
-    space_id (String) ID (slug) of the space the integration is in
+BEHAVIOR:
+  requirements:
+    - Explicit stack attachment required after creation
+    - Manual admin consent required via admin_consent_url
+    - Application display name cannot be modified without recreation
 
-Read-Only
-
-    admin_consent_provided (Boolean) Indicates whether admin consent has been performed for the AAD Application.
-    admin_consent_url (String) The URL to use to provide admin consent to the application in the customer's tenant
-    application_id (String) The applicationId of the Azure AD application used by the integration.
-    display_name (String) The display name for the application in Azure. This is automatically generated when the integration is created, and cannot be changed without deleting and recreating the integration.
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_azure_integration.example $INTEGRATION_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+  permissions:
+    - Azure AD application permissions must be granted
+    - Subscription access must be configured if specified
+    
+  lifecycle:
+    create:
+      - Azure AD application is created
+      - Admin consent URL is generated
+      - Awaits manual consent
+    
+    update:
+      - Most fields can be modified
+      - display_name changes require recreation
+      
+    delete:
+      - Removes Azure AD application
+      - Revokes all access

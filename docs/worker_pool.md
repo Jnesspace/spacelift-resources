@@ -1,34 +1,80 @@
-spacelift_worker_pool (Resource)
+METADATA:
+  resource_type: spacelift_worker_pool
+  provider: spacelift
+  service: execution
+  description: Worker pool for executing Spacelift jobs
+  version: latest
 
-spacelift_worker_pool represents a worker pool assigned to the Spacelift account.
-Example Usage
-
-resource "spacelift_worker_pool" "k8s-core" {
-  name        = "Main worker"
-  csr         = filebase64("/path/to/csr")
-  description = "Used for all type jobs"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_worker_pool" "RESOURCE_NAME" {
+  name        = POOL_NAME
+  csr         = filebase64(CSR_PATH)    # Optional
+  description = DESCRIPTION             # Optional
+  labels      = [LABELS]               # Optional
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Worker pool identifier
+      validation: Must be unique in account
 
-    name (String) name of the worker pool
+  optional:
+    csr:
+      type: String
+      description: Base64 encoded certificate signing request
+      sensitive: true
+      note: Changes trigger token reset
+      
+    description:
+      type: String
+      description: Human-readable pool description
+      
+    labels:
+      type: Set[String]
+      description: Pool classification tags
+      default: []
+      
+    space_id:
+      type: String
+      description: Target space identifier
+      default: root or legacy space
 
-Optional
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
+      
+    config:
+      type: String
+      description: Worker connection credentials
+      sensitive: true
+      generated: true
+      
+    private_key:
+      type: String
+      description: Base64 encoded private key
+      sensitive: true
+      generated: true
 
-    csr (String, Sensitive) certificate signing request in base64. Changing this value will trigger a token reset.
-    description (String) description of the worker pool
-    labels (Set of String)
-    space_id (String) ID (slug) of the space the worker pool is in
+BEHAVIOR:
+  security:
+    - Uses certificate-based authentication
+    - Generates secure connection credentials
+    - Private key never transmitted after creation
+    
+  configuration:
+    - Can be assigned to specific spaces
+    - Supports labeling for organization
+    - CSR changes trigger security resets
+    
+  execution:
+    - Provides isolated execution environment
+    - Can be shared across stacks/modules
+    - Supports custom worker configurations
 
-Read-Only
-
-    config (String, Sensitive) credentials necessary to connect WorkerPool's workers to the control plane
-    id (String) The ID of this resource.
-    private_key (String, Sensitive) private key in base64
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_worker_pool.k8s-core $WORKER_POOL_ID
+IMPORT_FORMAT: $WORKER_POOL_ID

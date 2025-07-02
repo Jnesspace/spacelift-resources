@@ -1,86 +1,119 @@
-spacelift_saved_filter (Resource)
+METADATA:
+  resource_type: spacelift_saved_filter
+  provider: spacelift
+  service: organization
+  description: Custom filter criteria for Spacelift views
+  version: latest
 
-spacelift_saved_filter represents a Spacelift filter - a collection of customer-defined criteria that are applied by Spacelift at one of the decision points within the application.
-Example Usage
-
-resource "spacelift_saved_filter" "my_filter" {
-  type      = "webhooks"
-  name      = "filter for all xyz teams"
-  is_public = true
-  data = jsonencode({
-    "key" : "activeFilters",
-    "value" : jsonencode({
-      "filters" : [
-        [
-          "name",
-          {
-            "key" : "name",
-            "filterName" : "name",
-            "type" : "STRING",
-            "values" : [
-              "team_xyz_*"
-            ]
-          }
-        ]
-      ],
-      "sort" : {
-        "direction" : "ASC",
-        "option" : "space"
-      },
-      "text" : null,
-      "order" : [
-        {
-          "name" : "enabled",
-          "visible" : true
-        },
-        {
-          "name" : "endpoint",
-          "visible" : true
-        },
-        {
-          "name" : "slug",
-          "visible" : true
-        },
-        {
-          "name" : "label",
-          "visible" : true
-        },
-        {
-          "name" : "name",
-          "visible" : true
-        },
-        {
-          "name" : "space",
-          "visible" : true
-        }
-      ]
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_saved_filter" "RESOURCE_NAME" {
+  name      = FILTER_NAME
+  type      = FILTER_TYPE    # stacks, blueprints, contexts, webhooks
+  is_public = true          # Controls visibility
+  data      = jsonencode({
+    key   = "activeFilters"
+    value = jsonencode({
+      filters = FILTER_CRITERIA,
+      sort    = SORT_CONFIG,
+      order   = COLUMN_CONFIG
     })
   })
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Filter identifier
+      validation: Must be unique per type
+      
+    type:
+      type: String
+      description: Target view type
+      allowed_values:
+        - stacks
+        - blueprints
+        - contexts
+        - webhooks
+        
+    is_public:
+      type: Boolean
+      description: Filter visibility
+      validation: true/false
+      
+    data:
+      type: String
+      description: JSON filter configuration
+      validation: Must be valid JSON
+      structure:
+        key: String
+        value:
+          filters: Array of criteria
+          sort: Sort configuration
+          order: Column visibility
 
-    data (String) Data is the JSON representation of the filter data
-    is_public (Boolean) Toggle whether the filter is public or not
-    name (String) Name of the saved filter
-    type (String) Type describes the type of the filter. It is used to determine which view the filter is for. Possible values are stacks, blueprints, contexts, webhooks.
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
+      
+    created_by:
+      type: String
+      description: Creator's login
+      generated: true
 
-Read-Only
+BEHAVIOR:
+  filtering:
+    - Defines view criteria
+    - Supports multiple fields
+    - Complex filter logic
+    
+  visibility:
+    - Public or private filters
+    - Shared across users
+    - View-specific scope
+    
+  configuration:
+    - JSON-based definition
+    - Customizable columns
+    - Sorting options
+    
+  views:
+    stacks:
+      - Filter stack resources
+      - Stack-specific fields
+      - Stack organization
+    blueprints:
+      - Template filtering
+      - Blueprint management
+      - Template organization
+    contexts:
+      - Context filtering
+      - Configuration management
+      - Context grouping
+    webhooks:
+      - Webhook filtering
+      - Integration management
+      - Endpoint organization
 
-    created_by (String) Login of the user who created the saved filter
-    id (String) Globally unique ID of the saved filter
+IMPORT_FORMAT: $FILTER_ID
 
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_saved_filter.my_filter $FILTER_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+EXAMPLE:
+  webhook_filter:
+    type: webhooks
+    data:
+      filters:
+        - name:
+            type: STRING
+            values: ["team_xyz_*"]
+      sort:
+        direction: ASC
+        option: space
+      order:
+        - name: enabled
+          visible: true
+        - name: endpoint
+          visible: true

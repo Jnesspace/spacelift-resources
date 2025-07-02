@@ -1,49 +1,65 @@
-spacelift_policy_attachment (Resource)
+METADATA:
+  resource_type: spacelift_policy_attachment
+  provider: spacelift
+  service: governance
+  description: Links policies to stacks or modules for rule enforcement
+  version: latest
 
-spacelift_policy_attachment represents a relationship between a policy (spacelift_policy) and a stack (spacelift_stack) or module (spacelift_module). Each policy can only be attached to a stack/module once. LOGIN policies are the exception because they apply globally and not to individual stacks/modules. An attempt to attach one will fail.
-Example Usage
-
-resource "spacelift_policy" "no-weekend-deploys" {
-  name = "Let's not deploy any changes over the weekend"
-  body = file("policies/no-weekend-deploys.rego")
-  type = "PLAN"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_policy_attachment" "RESOURCE_NAME" {
+  policy_id = POLICY_ID
+  # One of the following must be set:
+  stack_id  = STACK_ID   # Optional if module_id is set
+  module_id = MODULE_ID  # Optional if stack_id is set
 }
+```
 
-resource "spacelift_stack" "core-infra-production" {
-  name       = "Core Infrastructure (production)"
-  branch     = "master"
-  repository = "core-infra"
-}
+ATTRIBUTES:
+  required:
+    policy_id:
+      type: String
+      description: Policy to attach
+      validation: Must exist and not be LOGIN type
 
-resource "spacelift_policy_attachment" "no-weekend-deploys" {
-  policy_id = spacelift_policy.no-weekend-deploys.id
-  stack_id  = spacelift_stack.core-infra-production.id
-}
+  optional:
+    stack_id:
+      type: String
+      description: Target stack identifier
+      validation: Must exist if module_id not set
+      note: Mutually exclusive with module_id
+      
+    module_id:
+      type: String
+      description: Target module identifier
+      validation: Must exist if stack_id not set
+      note: Mutually exclusive with stack_id
 
-Schema
-Required
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    policy_id (String) ID of the policy to attach
+BEHAVIOR:
+  attachment:
+    - One policy per stack/module
+    - LOGIN policies cannot be attached
+    - Target must be either stack or module
+    
+  validation:
+    - Policy must exist
+    - Target must exist
+    - Cannot attach same policy twice
+    
+  scope:
+    - Policies affect attached resource
+    - Stack attachments affect stack runs
+    - Module attachments affect module tests
 
-Optional
+LIMITATIONS:
+  - LOGIN policies are global only
+  - Cannot attach to both stack and module
+  - One policy per target resource
 
-    module_id (String) ID of the module to attach the policy to
-    stack_id (String) ID of the stack to attach the policy to
-
-Read-Only
-
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_policy_attachment.no-weekend-deploys $POLICY_ID/$STACK_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+IMPORT_FORMAT: $POLICY_ID/$STACK_ID

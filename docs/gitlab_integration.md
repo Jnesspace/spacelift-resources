@@ -1,57 +1,141 @@
+METADATA:
+  resource_type: spacelift_gitlab_integration
+  provider: spacelift
+  service: vcs_integration
+  description: GitLab instance integration configuration
+  version: latest
 
-spacelift_gitlab_integration (Resource)
-
-spacelift_gitlab_integration represents an integration with a GitLab instance
-Example Usage
-
-resource "spacelift_gitlab_integration" "example" {
-  name             = "GitLab integration (public)"
-  space_id         = "root"
-  api_host         = "https://mygitlab.myorg.com"
-  user_facing_host = "https://mygitlab.myorg.com"
-  private_token    = "gitlab-token"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_gitlab_integration" "RESOURCE_NAME" {
+  name             = INTEGRATION_NAME
+  api_host         = API_HOST         # URL or private://hostname
+  user_facing_host = UI_HOST
+  private_token    = GITLAB_TOKEN
+  is_default       = false           # Optional
+  space_id         = SPACE_ID        # Optional, defaults to root
+  vcs_checks       = CHECK_TYPE      # Optional
 }
+```
 
-resource "spacelift_gitlab_integration" "private-example" {
-  name             = "GitLab integration (private)"
-  is_default       = true
-  api_host         = "private://mygitlab"
-  user_facing_host = "https://mygitlab.myorg.com"
-  private_token    = "gitlab-token"
-}
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Integration identifier
+      validation: Must be unique
+      
+    api_host:
+      type: String
+      description: API endpoint URL
+      validation: Valid URL or private:// scheme
+      
+    user_facing_host:
+      type: String
+      description: UI endpoint URL
+      validation: Valid HTTPS URL
+      
+    private_token:
+      type: String
+      description: GitLab API token
+      validation: Valid access token
+      sensitive: true
 
-Schema
-Required
+  optional:
+    is_default:
+      type: Boolean
+      description: Default integration status
+      default: false
+      note: Requires root space if true
+      
+    space_id:
+      type: String
+      description: Target space identifier
+      default: "root"
+      validation: Must exist in Spacelift
+      
+    description:
+      type: String
+      description: Human-readable description
+      default: ""
+      
+    labels:
+      type: Set[String]
+      description: Classification tags
+      default: []
+      
+    vcs_checks:
+      type: String
+      description: VCS check configuration
+      default: "INDIVIDUAL"
+      allowed_values:
+        - INDIVIDUAL
+        - AGGREGATED
+        - ALL
 
-    api_host (String) API host URL
-    name (String) The friendly name of the integration
-    private_token (String, Sensitive) The GitLab API Token
-    user_facing_host (String) User facing host URL.
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
+      
+    webhook_url:
+      type: String
+      description: Repository webhook URL
+      generated: true
+      
+    webhook_secret:
+      type: String
+      description: Webhook verification secret
+      generated: true
+      sensitive: true
 
-Optional
+BEHAVIOR:
+  connectivity:
+    public:
+      - Direct HTTPS access
+      - Standard API endpoints
+      - UI accessible publicly
+      
+    private:
+      - VCS agent pool required
+      - private:// URL scheme
+      - Internal network access
+      
+  authentication:
+    - Token-based auth
+    - Token stored securely
+    - Webhook verification
+    
+  webhooks:
+    - Automatic configuration
+    - Secret key generation
+    - Event verification
+    
+  vcs_checks:
+    INDIVIDUAL:
+      - Separate status checks
+      - Per-task reporting
+      
+    AGGREGATED:
+      - Combined status check
+      - Single report entry
+      
+    ALL:
+      - Both check types
+      - Complete reporting
 
-    description (String) Description of the integration
-    is_default (Boolean) Is the GitLab integration the default for all spaces? If set to true the space must be set to root in space_id or left empty which uses the default
-    labels (Set of String) Labels to set on the integration
-    space_id (String) ID (slug) of the space the integration is in; Default: root
-    vcs_checks (String) VCS checks configured for GitLab repositories. Possible values: INDIVIDUAL, AGGREGATED, ALL. Defaults to INDIVIDUAL.
+PATTERNS:
+  public_instance:
+    example:
+      api_host: "https://gitlab.example.com"
+      is_default: false
+    benefit: Direct connectivity
+    
+  private_instance:
+    example:
+      api_host: "private://gitlab"
+      is_default: true
+    benefit: Secure internal access
 
-Read-Only
-
-    id (String) GitLab integration id.
-    webhook_secret (String, Sensitive) Secret for webhooks originating from GitLab repositories
-    webhook_url (String) URL for webhooks originating from GitLab repositories
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_gitlab_integration.example spacelift_gitlab_integration_id
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+IMPORT_FORMAT: $INTEGRATION_ID

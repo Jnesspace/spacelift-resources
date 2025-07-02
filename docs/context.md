@@ -1,41 +1,108 @@
-spacelift_context (Resource)
+METADATA:
+  resource_type: spacelift_context
+  provider: spacelift
+  service: configuration
+  description: Reusable configuration collection for Spacelift resources
+  version: latest
 
-spacelift_context represents a Spacelift context - a collection of configuration elements (either environment variables or mounted files) that can be administratively attached to multiple stacks (spacelift_stack) or modules (spacelift_module) using a context attachment (spacelift_context_attachment)`
-Example Usage
-
-resource "spacelift_context" "prod-k8s-ie" {
-  description = "Configuration details for the compute cluster in 🇮🇪"
-  name        = "Production cluster (Ireland)"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_context" "RESOURCE_NAME" {
+  name        = CONTEXT_NAME
+  description = DESCRIPTION    # Optional
+  labels      = [LABELS]      # Optional
+  space_id    = SPACE_ID      # Optional
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Context identifier
+      validation: Must be unique in account
 
-    name (String) Name of the context - should be unique in one account
+  optional:
+    description:
+      type: String
+      description: Human-readable context description
+      
+    labels:
+      type: Set[String]
+      description: Classification and automation tags
+      note: Use autoattach:<label> format for auto-attachment
+      default: []
+      
+    space_id:
+      type: String
+      description: Target space identifier
+      default: root or legacy space
 
-Optional
+    # Hook Scripts
+    before_init:
+      type: List[String]
+      description: Pre-initialization commands
+      
+    after_init:
+      type: List[String]
+      description: Post-initialization commands
+      
+    before_plan:
+      type: List[String]
+      description: Pre-plan commands
+      
+    after_plan:
+      type: List[String]
+      description: Post-plan commands
+      
+    before_apply:
+      type: List[String]
+      description: Pre-apply commands
+      
+    after_apply:
+      type: List[String]
+      description: Post-apply commands
+      
+    before_perform:
+      type: List[String]
+      description: Pre-perform commands
+      
+    after_perform:
+      type: List[String]
+      description: Post-perform commands
+      
+    before_destroy:
+      type: List[String]
+      description: Pre-destroy commands
+      
+    after_destroy:
+      type: List[String]
+      description: Post-destroy commands
+      
+    after_run:
+      type: List[String]
+      description: Post-run commands
 
-    after_apply (List of String) List of after-apply scripts
-    after_destroy (List of String) List of after-destroy scripts
-    after_init (List of String) List of after-init scripts
-    after_perform (List of String) List of after-perform scripts
-    after_plan (List of String) List of after-plan scripts
-    after_run (List of String) List of after-run scripts
-    before_apply (List of String) List of before-apply scripts
-    before_destroy (List of String) List of before-destroy scripts
-    before_init (List of String) List of before-init scripts
-    before_perform (List of String) List of before-perform scripts
-    before_plan (List of String) List of before-plan scripts
-    description (String) Free-form context description for users
-    labels (Set of String) The labels of the context. To leverage the autoattach magic label, ensure your label follows the naming convention: autoattach:<your-label-name>
-    space_id (String) ID (slug) of the space the context is in
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-Read-Only
+BEHAVIOR:
+  sharing:
+    - Can be attached to multiple stacks and modules
+    - Requires explicit attachment via spacelift_context_attachment
+    - Supports inheritance in space hierarchy
+    
+  automation:
+    - Supports autoattach via labels
+    - Provides extensive hook system
+    - Hooks run in defined order
+    
+  configuration:
+    - Can contain environment variables
+    - Can contain mounted files
+    - Configuration inherited by attached resources
 
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_context.prod-k8s-ie $CONTEXT_ID
+IMPORT_FORMAT: $CONTEXT_ID

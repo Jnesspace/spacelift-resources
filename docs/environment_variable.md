@@ -1,69 +1,94 @@
+METADATA:
+  resource_type: spacelift_environment_variable
+  provider: spacelift
+  service: configuration
+  description: Environment variable configuration for Spacelift entities
+  version: latest
 
-spacelift_environment_variable (Resource)
-
-spacelift_environment_variable defines an environment variable on the context (spacelift_context), stack (spacelift_stack) or a module (spacelift_module), thereby allowing to pass and share various secrets and configuration with Spacelift stacks.
-Example Usage
-
-# For a context
-resource "spacelift_environment_variable" "ireland-kubeconfig" {
-  context_id  = "prod-k8s-ie"
-  name        = "KUBECONFIG"
-  value       = "/project/spacelift/kubeconfig"
-  write_only  = false
-  description = "Kubeconfig for Ireland Kubernetes cluster"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_environment_variable" "RESOURCE_NAME" {
+  name        = ENV_VAR_NAME
+  value       = ENV_VAR_VALUE
+  # One of the following must be set:
+  context_id  = CONTEXT_ID    # Optional
+  module_id   = MODULE_ID     # Optional
+  stack_id    = STACK_ID      # Optional
+  write_only  = true         # Optional
+  description = DESCRIPTION   # Optional
 }
+```
 
-# For a module
-resource "spacelift_environment_variable" "module-kubeconfig" {
-  module_id   = "k8s-module"
-  name        = "KUBECONFIG"
-  value       = "/project/spacelift/kubeconfig"
-  write_only  = false
-  description = "Kubeconfig for the module"
-}
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Environment variable identifier
+      validation: Must be valid environment variable name
 
-# For a stack
-resource "spacelift_environment_variable" "core-kubeconfig" {
-  stack_id    = "k8s-core"
-  name        = "KUBECONFIG"
-  value       = "/project/spacelift/kubeconfig"
-  write_only  = false
-  description = "Kubeconfig for the core stack"
-}
+  optional:
+    context_id:
+      type: String
+      description: Target context identifier
+      validation: Must exist if module_id and stack_id not set
+      note: Mutually exclusive with module_id and stack_id
+      
+    module_id:
+      type: String
+      description: Target module identifier
+      validation: Must exist if context_id and stack_id not set
+      note: Mutually exclusive with context_id and stack_id
+      
+    stack_id:
+      type: String
+      description: Target stack identifier
+      validation: Must exist if context_id and module_id not set
+      note: Mutually exclusive with context_id and module_id
+      
+    value:
+      type: String
+      description: Environment variable value
+      default: ""
+      sensitive: true
+      
+    write_only:
+      type: Boolean
+      description: Marks value as secret
+      default: true
+      
+    description:
+      type: String
+      description: Human-readable variable description
+      default: ""
 
-Schema
-Required
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
+      
+    checksum:
+      type: String
+      description: SHA-256 hash of value
+      generated: true
 
-    name (String) Name of the environment variable
+BEHAVIOR:
+  scope:
+    - Can be defined on contexts, modules, or stacks
+    - Must specify exactly one target entity
+    - Inheritance follows context attachment hierarchy
+    
+  security:
+    - Write-only values are masked in logs
+    - Values are encrypted at rest
+    - Checksums enable value verification
+    
+  validation:
+    - Requires valid environment variable name
+    - Cannot have duplicate names in same scope
+    - Target entity must exist
 
-Optional
-
-    context_id (String) ID of the context on which the environment variable is defined
-    description (String) Description of the environment variable
-    module_id (String) ID of the module on which the environment variable is defined
-    stack_id (String) ID of the stack on which the environment variable is defined
-    value (String, Sensitive) Value of the environment variable. Defaults to an empty string.
-    write_only (Boolean) Indicates whether the value is secret or not. Defaults to true.
-
-Read-Only
-
-    checksum (String) SHA-256 checksum of the value
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_environment_variable.ireland-kubeconfig context/$CONTEXT_ID/$ENVIRONMENT_VARIABLE_NAME
-
-terraform import spacelift_environment_variable.module-kubeconfig module/$MODULE_ID/$ENVIRONMENT_VARIABLE_NAME
-
-terraform import spacelift_environment_variable.core-kubeconfig stack/$STACK_ID/$ENVIRONMENT_VARIABLE_NAME
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+IMPORT_FORMAT:
+  context: context/$CONTEXT_ID/$ENV_VAR_NAME
+  module: module/$MODULE_ID/$ENV_VAR_NAME
+  stack: stack/$STACK_ID/$ENV_VAR_NAME

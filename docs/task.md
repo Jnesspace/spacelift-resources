@@ -1,40 +1,120 @@
+METADATA:
+  resource_type: spacelift_task
+  provider: spacelift
+  service: core
+  description: Task execution configuration for Spacelift stacks
+  version: latest
 
-spacelift_task (Resource)
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_task" "RESOURCE_NAME" {
+  stack_id = STACK_ID
+  command  = COMMAND
+  init     = true    # Optional
+}
+```
 
-spacelift_task represents a task in Spacelift.
-Schema
-Required
+ATTRIBUTES:
+  required:
+    command:
+      type: String
+      description: Command to execute
+      validation: Must be valid shell command
+    
+    stack_id:
+      type: String
+      description: Target stack identifier
+      validation: Must exist in Spacelift
 
-    command (String) Command that will be run.
-    stack_id (String) ID of the stack for which to run the task
+  optional:
+    init:
+      type: Boolean
+      description: Controls stack initialization
+      default: true
+      
+    keepers:
+      type: Map[String]
+      description: Values that trigger resource recreation
+      default: {}
 
-Optional
+    timeouts:
+      type: Block
+      description: Operation timeout settings
+      fields:
+        create:
+          type: String
+          description: Resource creation timeout
+          default: none
 
-    init (Boolean) Whether to initialize the stack or not. Default: true
-    keepers (Map of String) Arbitrary map of values that, when changed, will trigger recreation of the resource.
-    timeouts (Block, Optional) (see below for nested schema)
-    wait (Block List, Max: 1) Wait for the run to finish (see below for nested schema)
+    wait:
+      type: Block
+      max: 1
+      description: Task completion wait configuration
+      fields:
+        continue_on_state:
+          type: Set[String]
+          description: States allowing continuation
+          default: ["finished"]
+          allowed_values:
+            - applying
+            - canceled
+            - confirmed
+            - destroying
+            - discarded
+            - failed
+            - finished
+            - initializing
+            - pending_review
+            - performing
+            - planning
+            - preparing_apply
+            - preparing_replan
+            - preparing
+            - queued
+            - ready
+            - replan_requested
+            - skipped
+            - stopped
+            - unconfirmed
+        
+        continue_on_timeout:
+          type: Boolean
+          description: Continue after timeout
+          default: false
+        
+        disabled:
+          type: Boolean
+          description: Disable wait behavior
+          default: false
 
-Read-Only
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    id (String) The ID of this resource.
-
-Nested Schema for timeouts
-
-Optional:
-
-    create (String)
-
-Nested Schema for wait
-
-Optional:
-
-    continue_on_state (Set of String) Continue on the specified states of a finished run. If not specified, the default is [ 'finished' ]. You can use following states: applying, canceled, confirmed, destroying, discarded, failed, finished, initializing, pending_review, performing, planning, preparing_apply, preparing_replan, preparing, queued, ready, replan_requested, skipped, stopped, unconfirmed.
-    continue_on_timeout (Boolean) Continue if task timed out, i.e. did not reach any defined end state in time. Default: false
-    disabled (Boolean) Whether waiting for the task is disabled or not. Default: false
-
-On this page
-
-    Schema
-
-Report an issue 
+BEHAVIOR:
+  execution:
+    - Runs in stack's environment
+    - Can initialize stack before execution
+    - Supports command execution monitoring
+    
+  lifecycle:
+    - Can be triggered by keeper changes
+    - Supports timeout configuration
+    - Can wait for completion states
+    
+  states:
+    terminal:
+      - finished
+      - failed
+      - discarded
+      - stopped
+    transitional:
+      - initializing
+      - planning
+      - applying
+      - performing
+    review:
+      - pending_review
+      - unconfirmed

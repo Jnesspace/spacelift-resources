@@ -1,44 +1,90 @@
-spacelift_policy (Resource)
+METADATA:
+  resource_type: spacelift_policy
+  provider: spacelift
+  service: governance
+  description: Customer-defined rules for Spacelift decision points
+  version: latest
 
-spacelift_policy represents a Spacelift policy - a collection of customer-defined rules that are applied by Spacelift at one of the decision points within the application.
-Example Usage
-
-resource "spacelift_policy" "no-weekend-deploys" {
-  name = "Let's not deploy any changes over the weekend"
-  body = file("${path.module}/policies/no-weekend-deploys.rego")
-  type = "PLAN"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_policy" "RESOURCE_NAME" {
+  name        = POLICY_NAME
+  body        = file("${path.module}/policies/policy.rego")
+  type        = POLICY_TYPE
+  description = DESCRIPTION    # Optional
 }
+```
 
-resource "spacelift_stack" "core-infra-production" {
-  name       = "Core Infrastructure (production)"
-  branch     = "master"
-  repository = "core-infra"
-}
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Policy identifier
+      validation: Must be unique in account
+      
+    body:
+      type: String
+      description: Rego policy content
+      validation: Must be valid Rego syntax
+      
+    type:
+      type: String
+      description: Policy decision point
+      allowed_values:
+        - ACCESS         # Resource access control
+        - APPROVAL      # Run approval rules
+        - GIT_PUSH      # VCS push handling
+        - INITIALIZATION # Stack setup
+        - LOGIN         # Authentication rules
+        - PLAN          # Terraform plan rules
+        - TASK          # Task execution rules
+        - TRIGGER       # Run trigger rules
+        - NOTIFICATION  # Notification rules
+      deprecated_values:
+        - STACK_ACCESS  # Use ACCESS instead
+        - TASK_RUN     # Use TASK instead
+        - TERRAFORM_PLAN # Use PLAN instead
 
-resource "spacelift_policy_attachment" "no-weekend-deploys" {
-  policy_id = spacelift_policy.no-weekend-deploys.id
-  stack_id  = spacelift_stack.core-infra-production.id
-}
+  optional:
+    description:
+      type: String
+      description: Human-readable policy description
+      
+    labels:
+      type: Set[String]
+      description: Policy classification tags
+      default: []
+      
+    space_id:
+      type: String
+      description: Target space identifier
+      default: root or legacy space
 
-Schema
-Required
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    body (String) Body of the policy
-    name (String) Name of the policy - should be unique in one account
-    type (String) Type of the policy. Possible values are ACCESS, APPROVAL, GIT_PUSH, INITIALIZATION, LOGIN, PLAN, TASK, TRIGGER and NOTIFICATION. Deprecated values are STACK_ACCESS (use ACCESS instead), TASK_RUN (use TASK instead), and TERRAFORM_PLAN (use PLAN instead).
+BEHAVIOR:
+  execution:
+    - Evaluated at specific decision points
+    - Uses Rego policy language
+    - Must return valid decision result
+    
+  application:
+    - Requires explicit attachment to resources
+    - Can be shared across multiple resources
+    - Supports hierarchical organization
+    
+  scope:
+    - Can control multiple resource types
+    - Supports space-level isolation
+    - Enables granular access control
 
-Optional
+  integrations:
+    - Works with stacks and modules
+    - Integrates with VCS operations
+    - Controls automation workflows
 
-    description (String) Description of the policy
-    labels (Set of String)
-    space_id (String) ID (slug) of the space the policy is in
-
-Read-Only
-
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_policy.no-weekend-deploys $POLICY_ID
+IMPORT_FORMAT: $POLICY_ID

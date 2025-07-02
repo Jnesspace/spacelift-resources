@@ -1,38 +1,67 @@
+METADATA:
+  resource_type: spacelift_vcs_agent_pool
+  provider: spacelift
+  service: vcs_integration
+  description: Agent pool management for private VCS access
+  version: latest
 
-spacelift_vcs_agent_pool (Resource)
-
-spacelift_vcs_agent_pool represents a Spacelift VCS agent pool - a logical group of proxies allowing Spacelift to access private VCS installations
-Example Usage
-
-resource "spacelift_vcs_agent_pool" "ghe" {
-  name        = "ghe"
-  description = "VCS agent pool for our internal GitHub Enterprise"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_vcs_agent_pool" "RESOURCE_NAME" {
+  name        = POOL_NAME
+  description = DESCRIPTION    # Optional
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Pool identifier
+      validation: Must be unique in account
 
-    name (String) Name of the VCS agent pool, must be unique within an account
+  optional:
+    description:
+      type: String
+      description: Human-readable pool description
+      default: ""
 
-Optional
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
+      
+    config:
+      type: String
+      description: Base64 encoded pool configuration
+      sensitive: true
+      generated: true
 
-    description (String) Free-form VCS agent pool description for users
+BEHAVIOR:
+  access:
+    - Enables private VCS access
+    - Provides proxy functionality
+    - Manages agent groups
+    
+  security:
+    - Secure configuration delivery
+    - Protected agent credentials
+    - Encrypted communication
+    
+  management:
+    - Logical agent grouping
+    - Pool-level configuration
+    - Agent coordination
+    
+  usage:
+    enterprise:
+      - GitHub Enterprise access
+      - GitLab self-hosted
+      - Bitbucket Server/DC
+    private:
+      - Internal Git servers
+      - Custom VCS installations
+      - Protected repositories
 
-Read-Only
-
-    config (String, Sensitive) VCS agent pool configuration, encoded using base64
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_vcs_agent_pool.ghe $VCS_AGENT_POOL_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+IMPORT_FORMAT: $VCS_AGENT_POOL_ID

@@ -1,59 +1,74 @@
+METADATA:
+  resource_type: spacelift_space
+  provider: spacelift
+  service: organization
+  description: Hierarchical resource collection for granular access control
+  version: latest
+  permissions_required: root Admin
 
-spacelift_space (Resource)
-
-spacelift_space represents a Spacelift space - a collection of resources such as stacks, modules, policies, etc. Allows for more granular access control. Can have a parent space.
-
-Please note: the spacelift_space resource requires root Admin permissions, and can only be used by administrative stacks in the root space, or using an API key or user session that has root space access.
-Example Usage
-
-resource "spacelift_space" "development" {
-  name = "development"
-
-  # Every account has a root space that serves as the root for the space tree.
-  # Except for the root space, all the other spaces must define their parents.
-  parent_space_id = "root"
-
-  # An optional description of a space.
-  description = "This a child of the root space. It contains all the resources common to the development infrastructure."
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_space" "RESOURCE_NAME" {
+  name            = SPACE_NAME
+  parent_space_id = PARENT_ID          # Optional, defaults to "root"
+  description     = DESCRIPTION        # Optional
+  inherit_entities = true             # Optional
 }
+```
 
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Space identifier
+      validation: Must be unique in account
 
-resource "spacelift_space" "development-frontend" {
-  name = "development-frontend"
+  optional:
+    parent_space_id:
+      type: String
+      description: Parent space identifier
+      default: "root"
+      immutable: true
+      
+    description:
+      type: String
+      description: Human-readable space description
+      
+    inherit_entities:
+      type: Boolean
+      description: Inherit parent space read access
+      default: false
+      
+    labels:
+      type: Set[String]
+      description: Space classification tags
+      default: []
 
-  # This space will be a child of the development space.
-  parent_space_id = spacelift_space.development.id
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-  # An optional value, that gives this space a read access to all the entities that it's parent has access to.
-  inherit_entities = true
-}
+BEHAVIOR:
+  hierarchy:
+    - Forms tree structure with root space
+    - All non-root spaces must have parent
+    - Supports entity inheritance from parent
+    
+  access_control:
+    - Enables granular resource access
+    - Can inherit read access from parent
+    - Requires root Admin permissions
+    
+  resource_management:
+    - Contains stacks, modules, policies
+    - Supports resource organization
+    - Enables team-based resource isolation
 
-Schema
-Required
+  limitations:
+    - Creation requires root Admin access
+    - Must be managed from root space or API
+    - Parent relationship is immutable
 
-    name (String) name of the space
-
-Optional
-
-    description (String) free-form space description for users
-    inherit_entities (Boolean) indication whether access to this space inherits read access to entities from the parent space. Defaults to false.
-    labels (Set of String) list of labels describing a space
-    parent_space_id (String) immutable ID (slug) of parent space. Defaults to root.
-
-Read-Only
-
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_space.development $SPACE_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+IMPORT_FORMAT: $SPACE_ID

@@ -1,63 +1,101 @@
+METADATA:
+  resource_type: spacelift_mounted_file
+  provider: spacelift
+  service: configuration
+  description: File mounting configuration for Spacelift workspaces
+  version: latest
 
-spacelift_mounted_file (Resource)
-
-spacelift_mounted_file represents a file mounted in each Run's workspace that is part of a configuration of a context (spacelift_context), stack (spacelift_stack) or a module (spacelift_module). In principle, it's very similar to an environment variable (spacelift_environment_variable) except that the value is written to the filesystem rather than passed to the environment.
-Example Usage
-
-# For a context
-resource "spacelift_mounted_file" "ireland-kubeconfig" {
-  context_id    = "prod-k8s-ie"
-  relative_path = "kubeconfig"
-  content       = filebase64("${path.module}/kubeconfig.json")
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_mounted_file" "RESOURCE_NAME" {
+  relative_path = FILE_PATH
+  content      = filebase64(LOCAL_FILE_PATH)
+  
+  # One of the following must be set:
+  context_id   = CONTEXT_ID   # Optional
+  module_id    = MODULE_ID    # Optional
+  stack_id     = STACK_ID     # Optional
+  
+  write_only   = true         # Optional
+  description  = DESCRIPTION  # Optional
 }
+```
 
-# For a module
-resource "spacelift_mounted_file" "module-kubeconfig" {
-  module_id     = "k8s-module"
-  relative_path = "kubeconfig"
-  content       = filebase64("${path.module}/kubeconfig.json")
-}
+ATTRIBUTES:
+  required:
+    content:
+      type: String
+      description: Base64-encoded file content
+      sensitive: true
+      validation: Must be valid base64
+      
+    relative_path:
+      type: String
+      description: Mount path in workspace
+      validation: Valid path without /mnt/workspace/ prefix
 
-# For a stack
-resource "spacelift_mounted_file" "core-kubeconfig" {
-  stack_id      = "k8s-core"
-  relative_path = "kubeconfig"
-  content       = filebase64("${path.module}/kubeconfig.json")
-}
+  optional:
+    context_id:
+      type: String
+      description: Target context identifier
+      validation: Must exist if module_id and stack_id not set
+      note: Mutually exclusive with module_id and stack_id
+      
+    module_id:
+      type: String
+      description: Target module identifier
+      validation: Must exist if context_id and stack_id not set
+      note: Mutually exclusive with context_id and stack_id
+      
+    stack_id:
+      type: String
+      description: Target stack identifier
+      validation: Must exist if context_id and module_id not set
+      note: Mutually exclusive with context_id and module_id
+      
+    write_only:
+      type: Boolean
+      description: Restricts content read access
+      default: true
+      
+    description:
+      type: String
+      description: Human-readable file description
+      default: ""
 
-Schema
-Required
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
+      
+    checksum:
+      type: String
+      description: SHA-256 hash of content
+      generated: true
 
-    content (String, Sensitive) Content of the mounted file encoded using Base-64
-    relative_path (String) Relative path to the mounted file, without the /mnt/workspace/ prefix
+BEHAVIOR:
+  mounting:
+    - Files mounted in /mnt/workspace/
+    - Content available during runs
+    - Similar to environment variables
+    
+  security:
+    - Write-only option for sensitive files
+    - Content encrypted at rest
+    - Checksums for verification
+    
+  scope:
+    - Can be defined on contexts
+    - Can be defined on modules
+    - Can be defined on stacks
+    
+  validation:
+    - Requires valid base64 content
+    - Paths must be relative
+    - Target entity must exist
 
-Optional
-
-    context_id (String) ID of the context on which the mounted file is defined
-    description (String) Free-form description of the mounted file
-    module_id (String) ID of the module on which the mounted file is defined
-    stack_id (String) ID of the stack on which the mounted file is defined
-    write_only (Boolean) Indicates whether the content can be read back outside a Run. Defaults to true.
-
-Read-Only
-
-    checksum (String) SHA-256 checksum of the value
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_mounted_file.ireland-kubeconfig context/$CONTEXT_ID/$MOUNTED_FILE_ID
-
-terraform import spacelift_mounted_file.module-kubeconfig module/$MODULE_ID/$MOUNTED_FILE_ID
-
-terraform import spacelift_mounted_file.core-kubeconfig stack/$STACK_ID/$MOUNTED_FILE_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+IMPORT_FORMAT:
+  context: context/$CONTEXT_ID/$MOUNTED_FILE_ID
+  module: module/$MODULE_ID/$MOUNTED_FILE_ID
+  stack: stack/$STACK_ID/$MOUNTED_FILE_ID

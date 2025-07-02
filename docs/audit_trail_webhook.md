@@ -1,26 +1,60 @@
-spacelift_audit_trail_webhook (Resource)
+# spacelift_audit_trail_webhook
 
-spacelift_audit_trail_webhook represents a webhook endpoint to which Spacelift sends POST requests about audit events.
-Example Usage
+METADATA:
+  resource_type: spacelift_audit_trail_webhook
+  provider: spacelift
+  service: webhooks
+  description: Webhook endpoint for Spacelift audit event notifications
+  version: latest
 
-resource "spacelift_audit_trail_webhook" "example" {
-  endpoint = "https://example.com"
-  enabled  = true
-  secret   = "mysecretkey"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_audit_trail_webhook" "RESOURCE_NAME" {
+  endpoint = URL_ENDPOINT
+  enabled  = BOOLEAN
+  secret   = SECRET_KEY
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    enabled:
+      type: Boolean
+      description: Controls webhook activation status
+      default: false
+      validation: none
+    
+    endpoint:
+      type: String
+      description: Destination URL for POST requests
+      validation: Must be valid URL format
+    
+    secret:
+      type: String
+      description: Secret key for request authentication
+      sensitive: true
+      validation: none
 
-    enabled (Boolean) enabled determines whether the webhook is enabled. If it is not, Spacelift will not send any requests to the endpoint.
-    endpoint (String) endpoint is the URL to which Spacelift will send POST requests about audit events.
-    secret (String, Sensitive) secret is a secret that Spacelift will send with the request. Note that once it's created, it will be just an empty string in the state due to security reasons.
+  optional:
+    custom_headers:
+      type: Map[String]
+      description: Additional HTTP headers for requests
+      default: {}
+      validation: Valid HTTP headers
+    
+    include_runs:
+      type: Boolean
+      description: Include run data in webhook payload
+      default: false
+      validation: none
 
-Optional
+  computed:
+    id:
+      type: String
+      description: Unique identifier for the resource
+      generated: true
 
-    custom_headers (Map of String) custom_headers is a Map of key-value strings, that will be passed as headers with audit trail requests.
-    include_runs (Boolean) include_runs determines whether the webhook should include information about the run that triggered the event.
-
-Read-Only
-
-    id (String) The ID of this resource.
+BEHAVIOR:
+  - Webhook is inactive until enabled=true is set
+  - Secret is never returned in state or outputs
+  - POST requests include X-Spacelift-Signature header

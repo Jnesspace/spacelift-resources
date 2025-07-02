@@ -1,107 +1,85 @@
-spacelift_aws_integration (Resource)
+# spacelift_aws_integration
 
-spacelift_aws_integration represents an integration with an AWS account. This integration is account-level and needs to be explicitly attached to individual stacks in order to take effect.
+METADATA:
+  resource_type: spacelift_aws_integration
+  provider: spacelift
+  service: cloud_integration
+  description: AWS account integration for Spacelift resource management
+  version: latest
 
-Note: when assuming credentials for shared workers, Spacelift will use $accountName@$integrationID@$stackID@$suffix or $accountName@$integrationID@$moduleID@$suffix as external ID and $runID@$stackID@$accountName truncated to 64 characters as session ID,$suffix will be read or write.
-Example Usage
-
-# Needed for generating the correct role ARNs
-data "aws_caller_identity" "current" {}
-
-locals {
-  role_name = "my_role"
-  role_arn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.role_name}"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_aws_integration" "RESOURCE_NAME" {
+  name = INTEGRATION_NAME
+  role_arn = IAM_ROLE_ARN
+  generate_credentials_in_worker = BOOLEAN
 }
+```
 
-# Create the AWS integration before creating your IAM role. The integration needs to exist
-# in order to generate the external ID used for role assumption.
-resource "spacelift_aws_integration" "this" {
-  name = local.role_name
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Friendly identifier for the integration
+      validation: none
+    
+    role_arn:
+      type: String
+      description: AWS IAM role ARN to be assumed
+      validation: Must be valid ARN format
 
-  # We need to set the ARN manually rather than referencing the role to avoid a circular dependency
-  role_arn                       = local.role_arn
-  generate_credentials_in_worker = false
-}
+  optional:
+    duration_seconds:
+      type: Number
+      description: Validity period for assumed credentials
+      default: 900
+      validation: 900-3600 seconds
+    
+    external_id:
+      type: String
+      description: Custom external ID for role assumption
+      applies_to: Private workers only
+      validation: none
+    
+    generate_credentials_in_worker:
+      type: Boolean
+      description: Enable AWS credential generation in private worker
+      default: false
+      validation: none
+    
+    labels:
+      type: Set[String]
+      description: Resource classification tags
+      default: []
+      validation: none
+    
+    region:
+      type: String
+      description: AWS region for STS endpoint selection
+      validation: Valid AWS region
+    
+    space_id:
+      type: String
+      description: Target space identifier
+      validation: Must exist in Spacelift
 
-data "spacelift_aws_integration_attachment_external_id" "my_stack" {
-  integration_id = spacelift_aws_integration.this.id
-  stack_id       = "my-stack-id"
-  read           = true
-  write          = true
-}
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-data "spacelift_aws_integration_attachment_external_id" "my_module" {
-  integration_id = spacelift_aws_integration.this.id
-  module_id      = "my-module-id"
-  read           = true
-  write          = true
-}
+BEHAVIOR:
+  session_naming:
+    format: "$runID@$stackID@$accountName"
+    max_length: 64
 
-# Create the IAM role, using the `assume_role_policy_statement` from the data source.
-resource "aws_iam_role" "this" {
-  name = local.role_name
+  external_id_format:
+    stack: "$accountName@$integrationID@$stackID@$suffix"
+    module: "$accountName@$integrationID@$moduleID@$suffix"
+    suffix_values: ["read", "write"]
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      jsondecode(data.spacelift_aws_integration_attachment_external_id.my_stack.assume_role_policy_statement),
-      jsondecode(data.spacelift_aws_integration_attachment_external_id.my_module.assume_role_policy_statement),
-    ]
-  })
-}
-
-# For our example we're granting PowerUserAccess, but you can restrict this to whatever you need.
-resource "aws_iam_role_policy_attachment" "this" {
-  role       = aws_iam_role.this.name
-  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
-}
-
-# Attach the integration to any stacks or modules that need to use it
-resource "spacelift_aws_integration_attachment" "my_stack" {
-  integration_id = spacelift_aws_integration.this.id
-  stack_id       = "my-stack-id"
-  read           = true
-  write          = true
-
-  # The role needs to exist before we attach since we test role assumption during attachment.
-  depends_on = [
-    aws_iam_role.this
-  ]
-}
-
-resource "spacelift_aws_integration_attachment" "my_module" {
-  integration_id = spacelift_aws_integration.this.id
-  module_id      = "my-module-id"
-  read           = true
-  write          = true
-
-  # The role needs to exist before we attach since we test role assumption during attachment.
-  depends_on = [
-    aws_iam_role.this
-  ]
-}
-
-Schema
-Required
-
-    name (String) The friendly name of the integration
-    role_arn (String) ARN of the AWS IAM role to attach
-
-Optional
-
-    duration_seconds (Number) Duration in seconds for which the assumed role credentials should be valid. Defaults to 900.
-    external_id (String) Custom external ID (works only for private workers).
-    generate_credentials_in_worker (Boolean) Generate AWS credentials in the private worker. Defaults to false.
-    labels (Set of String) Labels to set on the integration
-    region (String) AWS region to select a regional AWS STS endpoint.
-    space_id (String) ID (slug) of the space the integration is in
-
-Read-Only
-
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_aws_integration.read_write_integration $INTEGRATION_ID
+  requirements:
+    - Explicit stack attachment required after creation
+    - IAM role must trust Spacelift's AWS account
+    - Role must have necessary permissions for intended operations

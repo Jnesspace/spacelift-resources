@@ -1,26 +1,89 @@
+METADATA:
+  resource_type: spacelift_named_webhook
+  provider: spacelift
+  service: notifications
+  description: Named webhook endpoint for notification policy routing
+  version: latest
 
-spacelift_named_webhook (Resource)
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_named_webhook" "RESOURCE_NAME" {
+  name      = WEBHOOK_NAME
+  endpoint  = ENDPOINT_URL
+  space_id  = SPACE_ID
+  enabled   = true          # Optional
+  secret    = SECRET_KEY    # Optional
+  labels    = [LABELS]      # Optional
+}
+```
 
-spacelift_named_webhook represents a named webhook endpoint used for creating webhookswhich are referred to in Notification policies to route messages.
-Schema
-Required
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Webhook identifier
+      validation: Must be unique in space
+      note: Used for ID generation
+      
+    endpoint:
+      type: String
+      description: Destination URL
+      validation: Must be valid URL
+      
+    space_id:
+      type: String
+      description: Target space identifier
+      validation: Must exist in Spacelift
+      
+    enabled:
+      type: Boolean
+      description: Controls webhook activation
+      default: false
 
-    enabled (Boolean) enables or disables sending webhooks.
-    endpoint (String) endpoint to send the requests to
-    name (String) the name for the webhook which will also be used to generate the id
-    space_id (String) ID of the space the webhook is in
+  optional:
+    secret:
+      type: String
+      description: Request signature secret
+      sensitive: true
+      note: Not retrievable after creation
+      
+    labels:
+      type: Set[String]
+      description: Classification tags
+      default: []
+      note: Used in policies and filtering
 
-Optional
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    labels (Set of String) labels for the webhook to use when referring in policies or filtering them
-    secret (String, Sensitive) secret used to sign each request so you're able to verify that the request comes from us. Defaults to an empty value. Note that once it's created, it will be just an empty string in the state due to security reasons.
+BEHAVIOR:
+  routing:
+    - Referenced in notification policies
+    - Routes messages based on policies
+    - Supports message filtering
+    
+  security:
+    - Optional request signing
+    - Secret never returned in state
+    - Uses HTTPS for endpoints
+    
+  management:
+    - Can be enabled/disabled
+    - Organized by spaces
+    - Labeled for organization
+    
+  validation:
+    - Requires valid endpoint URL
+    - Name must be unique in space
+    - Space must exist
+    - Labels must be valid strings
 
-Read-Only
-
-    id (String) The ID of this resource.
-
-On this page
-
-    Schema
-
-Report an issue 
+USAGE:
+  notification_policy:
+    - Reference webhook by name
+    - Configure message routing
+    - Apply filtering rules
+    - Control message delivery

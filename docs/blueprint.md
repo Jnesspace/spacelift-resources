@@ -1,21 +1,89 @@
+METADATA:
+  resource_type: spacelift_blueprint
+  provider: spacelift
+  service: templates
+  description: Stack template engine for non-Terraform use cases
+  version: latest
+  note: Prefer spacelift_stack for Terraform users
 
-spacelift_blueprint (Resource)
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_blueprint" "RESOURCE_NAME" {
+  name        = BLUEPRINT_NAME
+  space       = SPACE_ID
+  state       = STATE          # DRAFT or PUBLISHED
+  description = DESCRIPTION    # Optional
+  template    = TEMPLATE_BODY  # Required if PUBLISHED
+  labels      = [LABELS]      # Optional
+}
+```
 
-spacelift_blueprint represents a Spacelift blueprint, which allows you to easily create stacks using a templating engine. For Terraform users it's preferable to use spacelift_stack instead. This resource is mostly useful for those who do not use Terraform to create stacks.
-Schema
-Required
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: Blueprint identifier
+      validation: Must be unique in space
+      
+    space:
+      type: String
+      description: Target space identifier
+      validation: Must exist in Spacelift
+      
+    state:
+      type: String
+      description: Blueprint publication state
+      allowed_values:
+        - DRAFT
+        - PUBLISHED
 
-    name (String) Name of the blueprint
-    space (String) ID of the space the blueprint is in
-    state (String) State of the blueprint. Value can be DRAFT or PUBLISHED.
+  optional:
+    description:
+      type: String
+      description: Human-readable blueprint description
+      
+    template:
+      type: String
+      description: Blueprint template content
+      validation: Required when state is PUBLISHED
+      
+    labels:
+      type: Set[String]
+      description: Classification tags
+      default: []
 
-Optional
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    description (String) Description of the blueprint
-    labels (Set of String) Labels of the blueprint
-    template (String) Body of the blueprint. If state is set to PUBLISHED, this field is required.
-
-Read-Only
-
-    id (String) The ID of this resource.
+BEHAVIOR:
+  templating:
+    - Provides stack creation templates
+    - Supports custom configuration
+    - Uses templating engine
+    
+  states:
+    DRAFT:
+      - Work in progress
+      - Template optional
+      - Not available for use
+    PUBLISHED:
+      - Ready for use
+      - Template required
+      - Available for stack creation
+    
+  organization:
+    - Space-scoped templates
+    - Label-based classification
+    - Description support
+    
+  usage:
+    primary:
+      - Non-Terraform stack creation
+      - Template-based deployments
+      - Standardized configurations
+    alternative:
+      - Use spacelift_stack for Terraform
 

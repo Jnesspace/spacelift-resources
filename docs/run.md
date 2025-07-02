@@ -1,57 +1,132 @@
+METADATA:
+  resource_type: spacelift_run
+  provider: spacelift
+  service: execution
+  description: Programmatic run trigger for Spacelift stacks
+  version: latest
 
-spacelift_run (Resource)
-
-spacelift_run allows programmatically triggering runs in response to arbitrary changes in the keepers section.
-Example Usage
-
-resource "spacelift_stack" "this" {
-  name       = "Test stack"
-  repository = "test"
-  branch     = "main"
-}
-
-resource "spacelift_run" "this" {
-  stack_id = spacelift_stack.this.id
-
-  keepers = {
-    branch = spacelift_stack.this.branch
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_run" "RESOURCE_NAME" {
+  stack_id    = STACK_ID
+  keepers     = {             # Optional
+    key = VALUE
   }
+  commit_sha  = COMMIT_SHA    # Optional
+  proposed    = false         # Optional
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    stack_id:
+      type: String
+      description: Target stack identifier
+      validation: Must exist in Spacelift
 
-    stack_id (String) ID of the stack on which the run is to be triggered.
+  optional:
+    keepers:
+      type: Map[String]
+      description: Change detection map
+      note: Changes trigger resource recreation
+      
+    commit_sha:
+      type: String
+      description: Specific commit to run
+      validation: Must be valid git SHA
+      
+    proposed:
+      type: Boolean
+      description: Run in proposed state
+      default: false
 
-Optional
+    timeouts:
+      type: Block
+      description: Operation timeouts
+      fields:
+        create:
+          type: String
+          description: Creation timeout
+          default: none
 
-    commit_sha (String) The commit SHA for which to trigger a run.
-    keepers (Map of String) Arbitrary map of values that, when changed, will trigger recreation of the resource.
-    proposed (Boolean) Whether the run is a proposed run. Defaults to false.
-    timeouts (Block, Optional) (see below for nested schema)
-    wait (Block List, Max: 1) Wait for the run to finish (see below for nested schema)
+    wait:
+      type: Block
+      max: 1
+      description: Run completion settings
+      fields:
+        continue_on_state:
+          type: Set[String]
+          description: States allowing continuation
+          default: ["finished"]
+          allowed_values:
+            - applying
+            - canceled
+            - confirmed
+            - destroying
+            - discarded
+            - failed
+            - finished
+            - initializing
+            - pending_review
+            - performing
+            - planning
+            - preparing_apply
+            - preparing_replan
+            - preparing
+            - queued
+            - ready
+            - replan_requested
+            - skipped
+            - stopped
+            - unconfirmed
+        
+        continue_on_timeout:
+          type: Boolean
+          description: Continue after timeout
+          default: false
+        
+        disabled:
+          type: Boolean
+          description: Disable wait behavior
+          default: false
 
-Read-Only
+  computed:
+    id:
+      type: String
+      description: Triggered run identifier
+      generated: true
 
-    id (String) The ID of the triggered run.
-
-Nested Schema for timeouts
-
-Optional:
-
-    create (String)
-
-Nested Schema for wait
-
-Optional:
-
-    continue_on_state (Set of String) Continue on the specified states of a finished run. If not specified, the default is [ 'finished' ]. You can use following states: applying, canceled, confirmed, destroying, discarded, failed, finished, initializing, pending_review, performing, planning, preparing_apply, preparing_replan, preparing, queued, ready, replan_requested, skipped, stopped, unconfirmed.
-    continue_on_timeout (Boolean) Continue if run timed out, i.e. did not reach any defined end state in time. Default: false
-    disabled (Boolean) Whether waiting for a job is disabled or not. Default: false
-
-On this page
-
-    Example Usage
-    Schema
-
-Report an issue 
+BEHAVIOR:
+  triggering:
+    - Triggered by keeper changes
+    - Can target specific commits
+    - Supports proposed state
+    
+  execution:
+    - Runs in stack's environment
+    - Uses stack's worker pool
+    - Inherits stack configuration
+    
+  states:
+    terminal:
+      - finished
+      - failed
+      - discarded
+      - stopped
+    review:
+      - pending_review
+      - unconfirmed
+    active:
+      - applying
+      - destroying
+      - performing
+      - planning
+    preparation:
+      - initializing
+      - preparing
+      - preparing_apply
+      - preparing_replan
+    queuing:
+      - queued
+      - ready
+      - replan_requested

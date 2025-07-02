@@ -1,148 +1,170 @@
+METADATA:
+  resource_type: spacelift_module
+  provider: spacelift
+  service: terraform_modules
+  description: Special stack type for testing and versioning Terraform modules
+  version: latest
 
-spacelift_module (Resource)
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_module" "RESOURCE_NAME" {
+  # Required fields
+  repository = REPOSITORY_NAME
+  branch     = BRANCH_NAME
 
-spacelift_module is a special type of a stack used to test and version Terraform modules.
-Example Usage
-
-# Explicit module name and provider:
-resource "spacelift_module" "k8s-module" {
-  name               = "k8s-module"
-  terraform_provider = "aws"
-  administrative     = true
-  branch             = "master"
-  description        = "Infra terraform module"
-  repository         = "terraform-super-module"
+  # Optional fields with auto-inference
+  name               = MODULE_NAME               # Optional, inferred from repository
+  terraform_provider = PROVIDER_NAME            # Optional, inferred from repository
+  
+  # Common optional fields
+  description        = DESCRIPTION              # Optional
+  project_root      = MODULE_SOURCE_PATH       # Optional
+  administrative    = false                    # Optional
+  public           = false                    # Optional
 }
+```
 
-# Unspecified module name and provider (repository naming scheme terraform-${provider}-${name})
-resource "spacelift_module" "example-module" {
-  administrative = true
-  branch         = "master"
-  description    = "Example terraform module"
-  repository     = "terraform-aws-example"
-  project_root   = "example"
-}
+ATTRIBUTES:
+  required:
+    branch:
+      type: String
+      description: Git branch to apply changes to
+      validation: Must be valid git branch name
+    
+    repository:
+      type: String
+      description: Repository name without owner part
+      validation: Must exist in VCS
+      note: Repository name format terraform-PROVIDER-NAME enables auto-inference
 
-Schema
-Required
+  optional:
+    name:
+      type: String
+      description: Module identifier
+      validation: Must be unique in account
+      note: Auto-inferred from repository if following naming convention
+      
+    terraform_provider:
+      type: String
+      description: Terraform provider used by module
+      note: Auto-inferred from repository if following naming convention
+      
+    administrative:
+      type: Boolean
+      description: Module can manage other resources
+      default: false
+      
+    description:
+      type: String
+      description: Human-readable module description
+      
+    project_root:
+      type: String
+      description: Directory containing module source
+      default: ""
+      
+    public:
+      type: Boolean
+      description: Public accessibility flag
+      default: false
+      immutable: true
+      
+    protect_from_deletion:
+      type: Boolean
+      description: Prevents accidental deletion
+      default: false
+      
+    shared_accounts:
+      type: Set[String]
+      description: Accounts with module access
+      default: []
+      
+    space_id:
+      type: String
+      description: Target space identifier
+      default: root or legacy space
+      
+    workflow_tool:
+      type: String
+      description: IaC execution tool
+      allowed_values: ["OPEN_TOFU", "TERRAFORM_FOSS", "CUSTOM"]
+      default: "TERRAFORM_FOSS"
 
-    branch (String) GitHub branch to apply changes to
-    repository (String) Name of the repository, without the owner part
+    worker_pool_id:
+      type: String
+      description: Worker pool for execution
+      note: Required for self-hosted instances
+      
+    labels:
+      type: Set[String]
+      description: Module classification tags
+      default: []
 
-Optional
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
+      
+    aws_assume_role_policy_statement:
+      type: String
+      description: AWS IAM assume role policy for trust setup
+      generated: true
 
-    administrative (Boolean) Indicates whether this module can manage others. Defaults to false.
-    azure_devops (Block List, Max: 1) Azure DevOps VCS settings (see below for nested schema)
-    bitbucket_cloud (Block List, Max: 1) Bitbucket Cloud VCS settings (see below for nested schema)
-    bitbucket_datacenter (Block List, Max: 1) Bitbucket Datacenter VCS settings (see below for nested schema)
-    description (String) Free-form module description for users
-    enable_local_preview (Boolean) Indicates whether local preview versions can be triggered on this Module. Defaults to false.
-    github_enterprise (Block List, Max: 1) GitHub Enterprise (self-hosted) VCS settings (see below for nested schema)
-    gitlab (Block List, Max: 1) GitLab VCS settings (see below for nested schema)
-    labels (Set of String)
-    name (String) The module name will by default be inferred from the repository name if it follows the terraform-provider-name naming convention. However, if the repository doesn't follow this convention, or you want to give it a custom name, you can provide it here.
-    project_root (String) Project root is the optional directory relative to the repository root containing the module source code.
-    protect_from_deletion (Boolean) Protect this module from accidental deletion. If set, attempts to delete this module will fail. Defaults to false.
-    public (Boolean) Make this module publicly accessible. Can only be set at creation time. Defaults to false.
-    raw_git (Block List, Max: 1) One-way VCS integration using a raw Git repository link (see below for nested schema)
-    shared_accounts (Set of String) List of the accounts (subdomains) which should have access to the Module
-    space_id (String) ID (slug) of the space the module is in
-    terraform_provider (String) The module provider will by default be inferred from the repository name if it follows the terraform-provider-name naming convention. However, if the repository doesn't follow this convention, or you gave the module a custom name, you can provide the provider name here.
-    worker_pool_id (String) ID of the worker pool to use. NOTE: worker_pool_id is required when using a self-hosted instance of Spacelift.
-    workflow_tool (String) Defines the tool that will be used to execute the workflow. This can be one of OPEN_TOFU, TERRAFORM_FOSS or CUSTOM. Defaults to TERRAFORM_FOSS.
+INTEGRATIONS:
+  vcs_providers:
+    github:
+      default: true
+      
+    github_enterprise:
+      required:
+        namespace: String # GitHub org/user
+      optional:
+        id: String # Integration ID
+        
+    gitlab:
+      required:
+        namespace: String # GitLab namespace
+      optional:
+        id: String # Integration ID
+        
+    bitbucket_cloud:
+      required:
+        namespace: String # Bitbucket project
+      optional:
+        id: String # Integration ID
+        
+    bitbucket_datacenter:
+      required:
+        namespace: String # Bitbucket project
+      optional:
+        id: String # Integration ID
+        
+    azure_devops:
+      required:
+        project: String # Azure DevOps project
+      optional:
+        id: String # Integration ID
+        
+    raw_git:
+      required:
+        url: String # HTTPS repository URL
+        namespace: String # Display name
 
-Read-Only
+BEHAVIOR:
+  naming:
+    - Auto-infers name and provider from repository name
+    - Repository format: terraform-PROVIDER-NAME
+    - Custom names override auto-inference
+    
+  security:
+    - Public/private visibility set at creation
+    - Supports account sharing
+    - Deletion protection available
+    
+  execution:
+    - Runs in specified worker pool
+    - Supports different IaC tools
+    - Can initialize and test module code
 
-    aws_assume_role_policy_statement (String) AWS IAM assume role policy statement setting up trust relationship
-    id (String) The ID of this resource.
-
-Nested Schema for azure_devops
-
-Required:
-
-    project (String) The name of the Azure DevOps project
-
-Optional:
-
-    id (String) ID of the Azure Devops integration. If not specified, the default integration will be used.
-
-Read-Only:
-
-    is_default (Boolean) Indicates whether this is the default Azure DevOps integration
-
-Nested Schema for bitbucket_cloud
-
-Required:
-
-    namespace (String) The Bitbucket project containing the repository
-
-Optional:
-
-    id (String) The ID of the Bitbucket Cloud integration. If not specified, the default integration will be used.
-
-Read-Only:
-
-    is_default (Boolean) Indicates whether this is the default Bitbucket Cloud integration
-
-Nested Schema for bitbucket_datacenter
-
-Required:
-
-    namespace (String) The Bitbucket project containing the repository
-
-Optional:
-
-    id (String) The ID of the Bitbucket Datacenter integration. If not specified, the default integration will be used.
-
-Read-Only:
-
-    is_default (Boolean) Indicates whether this is the default Bitbucket Datacenter integration
-
-Nested Schema for github_enterprise
-
-Required:
-
-    namespace (String) The GitHub organization / user the repository belongs to
-
-Optional:
-
-    id (String) The ID of the GitHub Enterprise integration. If not specified, the default integration will be used.
-
-Read-Only:
-
-    is_default (Boolean) Indicates whether this is the default GitHub Enterprise integration
-
-Nested Schema for gitlab
-
-Required:
-
-    namespace (String) The GitLab namespace containing the repository
-
-Optional:
-
-    id (String) ID of the Gitlab integration. If not specified, the default integration will be used.
-
-Read-Only:
-
-    is_default (Boolean) Indicates whether this is the default GitLab integration
-
-Nested Schema for raw_git
-
-Required:
-
-    namespace (String) User-friendly namespace for the repository, this is for cosmetic purposes only
-    url (String) HTTPS URL of the Git repository
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_module.k8s-module $MODULE_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+IMPORT_FORMAT: $MODULE_ID

@@ -1,42 +1,94 @@
+METADATA:
+  resource_type: spacelift_idp_group_mapping
+  provider: spacelift
+  service: access_control
+  description: Maps Identity Provider groups to Spacelift permissions
+  version: latest
 
-spacelift_idp_group_mapping (Resource)
-
-spacelift_idp_group_mapping represents a mapping (binding) between a user group (as provided by IdP) and a Spacelift User Management Policy. If you assign permissions (a Policy) to a user group, all users in the group will have those permissions unless the user's permissions are higher than the group's permissions.
-Example Usage
-
-resource "spacelift_idp_group_mapping" "test" {
-  name = "test"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_idp_group_mapping" "RESOURCE_NAME" {
+  name        = GROUP_NAME
+  description = DESCRIPTION    # Optional
+  
   policy {
-    space_id = "root"
-    role     = "ADMIN"
+    space_id = SPACE_ID
+    role     = ROLE_TYPE     # READ, WRITE, or ADMIN
   }
-  description = "test description"
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    name:
+      type: String
+      description: IdP group identifier
+      validation: Must be unique in account
+      
+    policy:
+      type: Block Set
+      min: 1
+      description: Space access policies
+      fields:
+        space_id:
+          type: String
+          description: Target space identifier
+          required: true
+          validation: Must exist in Spacelift
+        role:
+          type: String
+          description: Access level in space
+          required: true
+          allowed_values:
+            - READ
+            - WRITE
+            - ADMIN
 
-    name (String) Name of the user group - should be unique in one account
-    policy (Block Set, Min: 1) (see below for nested schema)
+  optional:
+    description:
+      type: String
+      description: Human-readable group description
+      default: ""
 
-Optional
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    description (String) Description of the user group
+BEHAVIOR:
+  permission_inheritance:
+    - Group permissions apply to all members
+    - Individual permissions take precedence
+    - Higher individual roles override group roles
+    
+  roles:
+    READ:
+      - View resources
+      - Access configurations
+      - Read logs
+    WRITE:
+      - Modify resources
+      - Update configurations
+      - Trigger operations
+    ADMIN:
+      - Full control
+      - User management
+      - Policy configuration
+    
+  validation:
+    - Group name must be unique
+    - Space must exist
+    - Role must be valid
+    - At least one policy required
 
-Read-Only
-
-    id (String) The ID of this resource.
-
-Nested Schema for policy
-
-Required:
-
-    role (String) Type of access to the space. Possible values are: READ, WRITE, ADMIN
-    space_id (String) ID (slug) of the space the user group has access to
-
-On this page
-
-    Example Usage
-    Schema
-
-Report an issue 
+INTEGRATION:
+  identity_provider:
+    - Syncs group memberships
+    - Manages user associations
+    - Updates permissions
+    
+  policies:
+    - Define group access rights
+    - Control space permissions
+    - Set role-based access

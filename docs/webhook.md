@@ -1,40 +1,71 @@
+METADATA:
+  resource_type: spacelift_webhook
+  provider: spacelift
+  service: notifications
+  description: Webhook endpoint for Spacelift run state change notifications
+  version: latest
 
-spacelift_webhook (Resource)
-
-spacelift_webhook represents a webhook endpoint to which Spacelift sends the POST request about run state changes.
-Example Usage
-
-resource "spacelift_webhook" "webhook" {
-  endpoint = "https://example.com/webhooks"
-  stack_id = "k8s-core"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_webhook" "RESOURCE_NAME" {
+  endpoint  = WEBHOOK_URL
+  stack_id  = STACK_ID      # Optional if module_id is set
+  module_id = MODULE_ID     # Optional if stack_id is set
+  enabled   = true         # Optional
+  secret    = "mysecret"   # Optional
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    endpoint:
+      type: String
+      description: Destination URL for POST requests
+      validation: Must be valid URL
 
-    endpoint (String) endpoint to send the POST request to
+  optional:
+    enabled:
+      type: Boolean
+      description: Controls webhook activation
+      default: true
+      
+    module_id:
+      type: String
+      description: Source module identifier
+      validation: Must exist if stack_id not set
+      note: Mutually exclusive with stack_id
+      
+    stack_id:
+      type: String
+      description: Source stack identifier
+      validation: Must exist if module_id not set
+      note: Mutually exclusive with module_id
+      
+    secret:
+      type: String
+      description: Request signature secret
+      sensitive: true
+      note: Not retrievable after creation
 
-Optional
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    enabled (Boolean) enables or disables sending webhooks. Defaults to true.
-    module_id (String) ID of the module which triggers the webhooks
-    secret (String, Sensitive) secret used to sign each POST request so you're able to verify that the request comes from us. Defaults to an empty value. Note that once it's created, it will be just an empty string in the state due to security reasons.
-    stack_id (String) ID of the stack which triggers the webhooks
+BEHAVIOR:
+  triggers:
+    - Sends POST requests on run state changes
+    - Only triggers for specified stack or module
+    
+  security:
+    - Supports request signing with secret
+    - Secret is never returned in state
+    - Uses HTTPS for endpoint communication
+    
+  validation:
+    - Requires either stack_id or module_id
+    - Cannot specify both stack_id and module_id
+    - Endpoint must be accessible
 
-Read-Only
-
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_webhook.webhook stack/$STACK_ID/$WEBHOOK_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+IMPORT_FORMAT: stack/$STACK_ID/$WEBHOOK_ID

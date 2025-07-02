@@ -1,33 +1,71 @@
+METADATA:
+  resource_type: spacelift_stack_activator
+  provider: spacelift
+  service: lifecycle
+  description: Controls stack activation state
+  version: latest
 
-spacelift_stack_activator (Resource)
-
-spacelift_stack_activator is used to to enable/disable Spacelift Stack.
-Example Usage
-
-resource "spacelift_stack" "app" {
-  branch     = "master"
-  name       = "Application stack"
-  repository = "app"
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_stack_activator" "RESOURCE_NAME" {
+  stack_id = STACK_ID
+  enabled  = true    # Required, controls stack state
 }
+```
 
-resource "spacelift_stack_activator" "test" {
-  enabled  = true
-  stack_id = spacelift_stack.app.id
-}
+ATTRIBUTES:
+  required:
+    stack_id:
+      type: String
+      description: Target stack identifier
+      validation: Must exist in Spacelift
+      
+    enabled:
+      type: Boolean
+      description: Stack activation state
+      validation: Must be true or false
 
-Schema
-Required
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    enabled (Boolean) Enable/disable stack
-    stack_id (String) ID of the stack to enable/disable
+BEHAVIOR:
+  activation:
+    - Controls stack processing
+    - Enables/disables operations
+    - Affects all stack functions
+    
+  state_management:
+    - Independent of stack definition
+    - Immediate state change
+    - Reversible operation
+    
+  effects:
+    enabled_true:
+      - Allows stack operations
+      - Enables scheduled runs
+      - Processes webhooks
+      - Allows manual triggers
+      
+    enabled_false:
+      - Blocks stack operations
+      - Disables scheduled runs
+      - Ignores webhooks
+      - Prevents manual triggers
 
-Read-Only
-
-    id (String) The ID of this resource.
-
-On this page
-
-    Example Usage
-    Schema
-
-Report an issue 
+PATTERNS:
+  maintenance:
+    example:
+      - Disable for maintenance
+      - Perform updates
+      - Re-enable when ready
+    benefit: Controlled maintenance windows
+    
+  automation:
+    example:
+      - Conditional activation
+      - Environment-based control
+      - Scheduled availability
+    benefit: Automated stack management

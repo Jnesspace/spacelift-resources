@@ -1,48 +1,92 @@
+METADATA:
+  resource_type: spacelift_stack_destructor
+  provider: spacelift
+  service: lifecycle
+  description: Managed destruction of stack resources
+  version: latest
 
-spacelift_stack_destructor (Resource)
-
-spacelift_stack_destructor is used to destroy the resources of a Stack before deleting it. depends_on should be used to make sure that all necessary resources (environment variables, roles, integrations, etc.) are still in place when the destruction run is executed. Note: Destroying this resource will delete the resources in the stack. If this resource needs to be deleted and the resources in the stacks are to be preserved, ensure that the deactivated attribute is set to true.
-Example Usage
-
-resource "spacelift_stack" "k8s-core" {
-  // ...
-}
-
-resource "spacelift_environment_variable" "credentials" {
-  // ...
-}
-
-resource "spacelift_stack_destructor" "k8s-core" {
+USAGE_TEMPLATE:
+```hcl
+resource "spacelift_stack_destructor" "RESOURCE_NAME" {
+  stack_id    = STACK_ID
+  deactivated = false      # Optional
+  
   depends_on = [
-    spacelift_environment_variable.credentials,
+    REQUIRED_RESOURCES     # Dependencies needed for cleanup
   ]
-
-  stack_id = spacelift_stack.k8s-core.id
 }
+```
 
-Schema
-Required
+ATTRIBUTES:
+  required:
+    stack_id:
+      type: String
+      description: Target stack identifier
+      validation: Must exist in Spacelift
 
-    stack_id (String) ID of the stack to delete and destroy on destruction
+  optional:
+    deactivated:
+      type: Boolean
+      description: Prevents resource deletion
+      default: false
+      note: Set true to preserve resources
+      
+    timeouts:
+      type: Block
+      description: Operation timeouts
+      fields:
+        delete:
+          type: String
+          description: Deletion timeout
+          default: none
 
-Optional
+  computed:
+    id:
+      type: String
+      description: Unique resource identifier
+      generated: true
 
-    deactivated (Boolean) If set to true, destruction won't delete the stack
-    timeouts (Block, Optional) (see below for nested schema)
+BEHAVIOR:
+  destruction:
+    - Destroys stack resources
+    - Deletes stack afterwards
+    - Can be deactivated to preserve
+    
+  dependencies:
+    - Requires explicit depends_on
+    - Maintains required resources
+    - Ensures clean destruction
+    
+  safety:
+    - Can preserve resources
+    - Configurable timeouts
+    - Requires dependency setup
+    
+  workflow:
+    - Executes destroy command
+    - Waits for completion
+    - Handles cleanup order
 
-Read-Only
-
-    id (String) The ID of this resource.
-
-Nested Schema for timeouts
-
-Optional:
-
-    delete (String)
-
-On this page
-
-    Example Usage
-    Schema
-
-Report an issue 
+IMPORTANT_NOTES:
+  - Set deactivated=true to preserve resources when removing destructor
+  - Use depends_on for required cleanup resources
+  - Dependencies might include:
+    - Environment variables
+    - Role assignments
+    - Integrations
+    - Mounted files
+    
+PATTERNS:
+  cleanup:
+    example:
+      - Environment setup
+      - Resource destruction
+      - Stack deletion
+    benefit: Ensures complete cleanup
+    
+  preservation:
+    example:
+      - Set deactivated=true
+      - Remove destructor
+      - Resources preserved
+    benefit: Prevents accidental deletion
