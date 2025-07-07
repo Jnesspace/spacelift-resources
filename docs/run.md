@@ -1,132 +1,62 @@
-METADATA:
-  resource_type: spacelift_run
-  provider: spacelift
-  service: execution
-  description: Programmatic run trigger for Spacelift stacks
-  version: latest
+# Resource: spacelift_run
 
-USAGE_TEMPLATE:
+## Description
+Triggers a run on a Spacelift stack programmatically. Runs execute the stack's infrastructure code and can be configured to wait for completion.
+
+## Example Usage
 ```hcl
-resource "spacelift_run" "RESOURCE_NAME" {
-  stack_id    = STACK_ID
-  keepers     = {             # Optional
-    key = VALUE
+# Basic run trigger
+resource "spacelift_run" "deploy" {
+  stack_id = spacelift_stack.app.id
+  
+  keepers = {
+    version = var.app_version
   }
-  commit_sha  = COMMIT_SHA    # Optional
-  proposed    = false         # Optional
+}
+
+# Run with specific commit and wait configuration
+resource "spacelift_run" "rollback" {
+  stack_id   = spacelift_stack.app.id
+  commit_sha = "abc123def456"
+  proposed   = false
+  
+  keepers = {
+    rollback_trigger = timestamp()
+  }
+  
+  wait {
+    continue_on_state   = ["finished", "failed"]
+    continue_on_timeout = false
+    disabled           = false
+  }
 }
 ```
 
-ATTRIBUTES:
-  required:
-    stack_id:
-      type: String
-      description: Target stack identifier
-      validation: Must exist in Spacelift
+## Argument Reference
 
-  optional:
-    keepers:
-      type: Map[String]
-      description: Change detection map
-      note: Changes trigger resource recreation
-      
-    commit_sha:
-      type: String
-      description: Specific commit to run
-      validation: Must be valid git SHA
-      
-    proposed:
-      type: Boolean
-      description: Run in proposed state
-      default: false
+### Required Arguments
+* `stack_id` - (Required) ID of the stack to trigger a run on
 
-    timeouts:
-      type: Block
-      description: Operation timeouts
-      fields:
-        create:
-          type: String
-          description: Creation timeout
-          default: none
+### Optional Arguments
+* `keepers` - (Optional) Map of values that trigger resource recreation when changed
+* `commit_sha` - (Optional) Specific commit SHA to run. If not specified, uses the latest commit
+* `proposed` - (Optional) Whether to create a proposed run. Defaults to `false`
+* `wait` - (Optional) Configuration for waiting for run completion
+  * `continue_on_state` - (Optional) States that allow continuation. Defaults to `["finished"]`
+  * `continue_on_timeout` - (Optional) Continue if run times out. Defaults to `false`
+  * `disabled` - (Optional) Disable waiting for completion. Defaults to `false`
+* `timeouts` - (Optional) Resource operation timeouts
+  * `create` - (Optional) Run creation timeout
 
-    wait:
-      type: Block
-      max: 1
-      description: Run completion settings
-      fields:
-        continue_on_state:
-          type: Set[String]
-          description: States allowing continuation
-          default: ["finished"]
-          allowed_values:
-            - applying
-            - canceled
-            - confirmed
-            - destroying
-            - discarded
-            - failed
-            - finished
-            - initializing
-            - pending_review
-            - performing
-            - planning
-            - preparing_apply
-            - preparing_replan
-            - preparing
-            - queued
-            - ready
-            - replan_requested
-            - skipped
-            - stopped
-            - unconfirmed
-        
-        continue_on_timeout:
-          type: Boolean
-          description: Continue after timeout
-          default: false
-        
-        disabled:
-          type: Boolean
-          description: Disable wait behavior
-          default: false
+### Read-Only Arguments
+* `id` - Unique resource identifier (the triggered run ID)
 
-  computed:
-    id:
-      type: String
-      description: Triggered run identifier
-      generated: true
+## Import
+```bash
+terraform import spacelift_run.example $RUN_ID
+```
 
-BEHAVIOR:
-  triggering:
-    - Triggered by keeper changes
-    - Can target specific commits
-    - Supports proposed state
-    
-  execution:
-    - Runs in stack's environment
-    - Uses stack's worker pool
-    - Inherits stack configuration
-    
-  states:
-    terminal:
-      - finished
-      - failed
-      - discarded
-      - stopped
-    review:
-      - pending_review
-      - unconfirmed
-    active:
-      - applying
-      - destroying
-      - performing
-      - planning
-    preparation:
-      - initializing
-      - preparing
-      - preparing_apply
-      - preparing_replan
-    queuing:
-      - queued
-      - ready
-      - replan_requested
+## Notes
+* Runs are triggered when keepers change or when the resource is created
+* Proposed runs don't make actual infrastructure changes
+* Use wait configuration to control Terraform execution flow based on run completion

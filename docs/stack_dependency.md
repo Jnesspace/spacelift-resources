@@ -1,73 +1,39 @@
-METADATA:
-  resource_type: spacelift_stack_dependency
-  provider: spacelift
-  service: orchestration
-  description: Stack dependency management for execution ordering
-  version: latest
+# Resource: spacelift_stack_dependency
 
-USAGE_TEMPLATE:
+## Description
+Creates a dependency relationship between two stacks, ensuring that the dependent stack waits for the dependency stack to complete successfully before executing its own runs.
+
+## Example Usage
 ```hcl
-resource "spacelift_stack_dependency" "RESOURCE_NAME" {
-  stack_id            = DEPENDENT_STACK_ID
-  depends_on_stack_id = DEPENDENCY_STACK_ID
+# Infrastructure dependency
+resource "spacelift_stack_dependency" "app_depends_on_infra" {
+  stack_id            = spacelift_stack.application.id
+  depends_on_stack_id = spacelift_stack.infrastructure.id
+}
+
+# Multiple dependencies
+resource "spacelift_stack_dependency" "frontend_depends_on_backend" {
+  stack_id            = spacelift_stack.frontend.id
+  depends_on_stack_id = spacelift_stack.backend.id
+}
+
+resource "spacelift_stack_dependency" "backend_depends_on_database" {
+  stack_id            = spacelift_stack.backend.id
+  depends_on_stack_id = spacelift_stack.database.id
 }
 ```
 
-ATTRIBUTES:
-  required:
-    stack_id:
-      type: String
-      description: Dependent stack identifier
-      validation: Must exist in Spacelift
-      immutable: true
-      
-    depends_on_stack_id:
-      type: String
-      description: Dependency stack identifier
-      validation: Must exist in Spacelift
-      immutable: true
+## Argument Reference
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Required Arguments
+* `stack_id` - (Required) ID of the dependent stack (the stack that waits)
+* `depends_on_stack_id` - (Required) ID of the dependency stack (the stack that must complete first)
 
-BEHAVIOR:
-  execution:
-    - Blocks dependent stack runs
-    - Waits for dependency completion
-    - Requires successful dependency state
-    
-  triggering:
-    - Changes in dependency trigger dependent
-    - Ensures infrastructure consistency
-    - Maintains deployment order
-    
-  validation:
-    - Both stacks must exist
-    - Cannot create circular dependencies
-    - Relationship is immutable
-    
-  states:
-    dependent:
-      - Waits for dependency
-      - Triggered by changes
-      - Requires dependency success
-    dependency:
-      - Must finish successfully
-      - Changes affect dependents
-      - Status affects dependent runs
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-PATTERNS:
-  infrastructure:
-    example:
-      - Base infrastructure stack
-      - Application stack depends on base
-    benefit: Ensures proper deployment order
-    
-  microservices:
-    example:
-      - Shared services stack
-      - Individual service stacks
-    benefit: Maintains service dependencies
+## Notes
+* Dependencies are immutable once created
+* Circular dependencies are not allowed
+* Changes to the dependency stack will trigger runs on the dependent stack
+* The dependent stack will not start until the dependency stack finishes successfully

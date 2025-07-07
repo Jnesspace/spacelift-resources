@@ -1,15 +1,44 @@
+# Resource: spacelift_named_webhook_secret_header
 
-spacelift_named_webhook_secret_header (Resource)
+## Description
+Configures custom HTTP headers with secrets for named webhooks, allowing secure authentication and custom metadata to be sent with webhook requests.
 
-spacelift_named_webhook_secret_header represents secret key value combination used as a custom headerwhen delivering webhook requests. It depends on spacelift_named_webhook resource which should exist.
-Schema
-Required
+## Example Usage
+```hcl
+# API key header for webhook authentication
+resource "spacelift_named_webhook_secret_header" "api_key" {
+  webhook_id = spacelift_named_webhook.monitoring.id
+  key        = "X-API-Key"
+  value      = var.webhook_api_key
+}
 
-    key (String) key for the header
-    value (String, Sensitive) value for the header
-    webhook_id (String) ID of the stack on which the environment variable is defined
+# Custom authorization header
+resource "spacelift_named_webhook_secret_header" "auth" {
+  webhook_id = spacelift_named_webhook.slack_alerts.id
+  key        = "Authorization"
+  value      = "Bearer ${var.slack_bearer_token}"
+}
 
-Read-Only
+# Custom metadata header
+resource "spacelift_named_webhook_secret_header" "source" {
+  webhook_id = spacelift_named_webhook.monitoring.id
+  key        = "X-Source"
+  value      = "spacelift-production"
+}
+```
 
-    id (String) The ID of this resource.
+## Argument Reference
+
+### Required Arguments
+* `webhook_id` - (Required) ID of the named webhook to add the header to
+* `key` - (Required) HTTP header name
+* `value` - (Required) HTTP header value (sensitive)
+
+### Read-Only Arguments
+* `id` - Unique resource identifier
+
+## Notes
+* Header values are stored securely and treated as sensitive
+* Multiple headers can be added to the same webhook
+* Headers are included in all webhook requests from the named webhook
 

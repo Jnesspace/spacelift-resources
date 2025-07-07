@@ -1,50 +1,35 @@
+# Resource: spacelift_stack_dependency_reference
 
-spacelift_stack_dependency_reference (Resource)
+## Description
+Creates a reference to outputs from another stack, allowing one stack to consume the outputs of its dependency stack without creating a hard dependency relationship.
 
-spacelift_stack_dependency_reference represents a Spacelift stack dependency reference - a reference matches a stack's output to another stack's input. It is similar to an environment variable (spacelift_environment_variable), except that value is provided by another stack's output.
-Example Usage
-
-resource "spacelift_stack" "infra" {
-  branch     = "master"
-  name       = "Infrastructure stack"
-  repository = "core-infra"
+## Example Usage
+```hcl
+# Reference infrastructure stack outputs
+resource "spacelift_stack_dependency_reference" "vpc_outputs" {
+  stack_dependency_id = spacelift_stack_dependency.app_depends_on_infra.id
+  output_name         = "vpc_id"
 }
 
-resource "spacelift_stack" "app" {
-  branch     = "master"
-  name       = "Application stack"
-  repository = "app"
+# Use the referenced output in your stack
+resource "aws_instance" "app" {
+  ami           = "ami-12345678"
+  instance_type = "t3.micro"
+  subnet_id     = spacelift_stack_dependency_reference.vpc_outputs.value
 }
+```
 
-resource "spacelift_stack_dependency" "test" {
-  stack_id            = spacelift_stack.app.id
-  depends_on_stack_id = spacelift_stack.infra.id
-}
+## Argument Reference
 
-resource "spacelift_stack_dependency_reference" "test" {
-  stack_dependency_id = spacelift_stack_dependency.test.id
-  output_name         = "DB_CONNECTION_STRING"
-  input_name          = "APP_DB_URL"
-}
+### Required Arguments
+* `stack_dependency_id` - (Required) ID of the stack dependency relationship
+* `output_name` - (Required) Name of the output to reference from the dependency stack
 
-Schema
-Required
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `value` - The actual value of the referenced output
 
-    input_name (String) Name of the input of the stack dependency reference
-    output_name (String) Name of the output of stack to depend on
-    stack_dependency_id (String) Immutable ID of stack dependency
-
-Optional
-
-    trigger_always (Boolean) Whether the dependents should be triggered even if the value of the reference did not change.
-
-Read-Only
-
-    id (String) The ID of this resource.
-
-On this page
-
-    Example Usage
-    Schema
-
-Report an issue 
+## Notes
+* The dependency stack must have a successful run with the specified output
+* Referenced outputs are available as computed values in your configuration
+* Changes to the dependency stack's outputs will trigger updates to dependent resources

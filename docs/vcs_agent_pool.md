@@ -1,67 +1,41 @@
-METADATA:
-  resource_type: spacelift_vcs_agent_pool
-  provider: spacelift
-  service: vcs_integration
-  description: Agent pool management for private VCS access
-  version: latest
+# Resource: spacelift_vcs_agent_pool
 
-USAGE_TEMPLATE:
+## Description
+A VCS agent pool manages a logical group of agents that provide secure access to private VCS installations, enabling Spacelift to connect to internal Git repositories.
+
+## Example Usage
 ```hcl
-resource "spacelift_vcs_agent_pool" "RESOURCE_NAME" {
-  name        = POOL_NAME
-  description = DESCRIPTION    # Optional
+# Basic VCS agent pool
+resource "spacelift_vcs_agent_pool" "github_enterprise" {
+  name        = "github-enterprise-pool"
+  description = "Agent pool for GitHub Enterprise Server access"
+}
+
+# VCS agent pool for GitLab self-hosted
+resource "spacelift_vcs_agent_pool" "gitlab_internal" {
+  name        = "gitlab-internal"
+  description = "Internal GitLab instance access"
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Pool identifier
-      validation: Must be unique in account
+## Argument Reference
 
-  optional:
-    description:
-      type: String
-      description: Human-readable pool description
-      default: ""
+### Required Arguments
+* `name` - (Required) Unique agent pool identifier within the account
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    config:
-      type: String
-      description: Base64 encoded pool configuration
-      sensitive: true
-      generated: true
+### Optional Arguments
+* `description` - (Optional) Human-readable description of the agent pool
 
-BEHAVIOR:
-  access:
-    - Enables private VCS access
-    - Provides proxy functionality
-    - Manages agent groups
-    
-  security:
-    - Secure configuration delivery
-    - Protected agent credentials
-    - Encrypted communication
-    
-  management:
-    - Logical agent grouping
-    - Pool-level configuration
-    - Agent coordination
-    
-  usage:
-    enterprise:
-      - GitHub Enterprise access
-      - GitLab self-hosted
-      - Bitbucket Server/DC
-    private:
-      - Internal Git servers
-      - Custom VCS installations
-      - Protected repositories
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `config` - Base64-encoded agent configuration (sensitive)
 
-IMPORT_FORMAT: $VCS_AGENT_POOL_ID
+## Import
+```bash
+terraform import spacelift_vcs_agent_pool.example $VCS_AGENT_POOL_ID
+```
+
+## Notes
+* Agent pools enable access to private VCS installations
+* Configuration is automatically generated and sensitive
+* Agents must be deployed and configured separately to join the pool

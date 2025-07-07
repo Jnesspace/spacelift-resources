@@ -1,64 +1,62 @@
+# Resource: spacelift_gcp_service_account
 
-spacelift_gcp_service_account (Resource)
+## Description
+A GCP service account that's automatically created and linked to a specific stack or module, providing credential-less authentication for Google Cloud Platform resources.
 
-spacelift_gcp_service_account represents a Google Cloud Platform service account that's linked to a particular Stack or Module. These accounts are created by Spacelift on per-stack basis, and can be added as members to as many organizations and projects as needed. During a Run or a Task, temporary credentials for those service accounts are injected into the environment, which allows credential-less GCP Terraform provider setup.
-Example Usage
-
-resource "spacelift_stack" "k8s-core" {
-  branch     = "master"
-  name       = "Kubernetes core services"
-  repository = "core-infra"
-}
-
-resource "spacelift_gcp_service_account" "k8s-core" {
-  stack_id = spacelift_stack.k8s-core.id
-
+## Example Usage
+```hcl
+# Stack GCP service account
+resource "spacelift_gcp_service_account" "production" {
+  stack_id = spacelift_stack.gcp_infrastructure.id
+  
   token_scopes = [
     "https://www.googleapis.com/auth/compute",
     "https://www.googleapis.com/auth/cloud-platform",
-    "https://www.googleapis.com/auth/devstorage.full_control",
+    "https://www.googleapis.com/auth/devstorage.full_control"
   ]
 }
 
-resource "google_project" "k8s-core" {
-  name       = "Kubernetes code"
-  project_id = "unicorn-k8s-core"
-  org_id     = var.gcp_organization_id
+# Module GCP service account
+resource "spacelift_gcp_service_account" "vpc_module" {
+  module_id = spacelift_module.gcp_vpc.id
+  
+  token_scopes = [
+    "https://www.googleapis.com/auth/compute"
+  ]
 }
 
-resource "google_project_iam_member" "k8s-core" {
-  project = google_project.k8s-core.id
-  role    = "roles/owner"
-  member  = "serviceAccount:${spacelift_gcp_service_account.k8s-core.service_account_email}"
+# Grant permissions to the service account
+resource "google_project_iam_member" "spacelift" {
+  project = var.gcp_project_id
+  role    = "roles/editor"
+  member  = "serviceAccount:${spacelift_gcp_service_account.production.service_account_email}"
 }
+```
 
-Schema
-Required
+## Argument Reference
 
-    token_scopes (Set of String) List of scopes that will be requested when generating temporary GCP service account credentials
+### Required Arguments
+* `token_scopes` - (Required) List of OAuth 2.0 scopes for the service account tokens
 
-Optional
+### Optional Arguments
+* `stack_id` - (Optional) ID of the stack to link the service account to. Mutually exclusive with `module_id`
+* `module_id` - (Optional) ID of the module to link the service account to. Mutually exclusive with `stack_id`
 
-    module_id (String) ID of the module which uses GCP service account credentials
-    stack_id (String) ID of the stack which uses GCP service account credentials
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `service_account_email` - Email address of the created GCP service account
 
-Read-Only
+## Import
+```bash
+# For stacks
+terraform import spacelift_gcp_service_account.example stack/$STACK_ID
 
-    id (String) The ID of this resource.
-    service_account_email (String) Email address of the GCP service account dedicated for this stack
+# For modules
+terraform import spacelift_gcp_service_account.example module/$MODULE_ID
+```
 
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_gcp_service_account.k8s-core stack/$STACK_ID
-
-terraform import spacelift_gcp_service_account.k8s-core module/$MODULE_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+## Notes
+* Either `stack_id` or `module_id` must be specified
+* Service accounts are created automatically by Spacelift
+* Use the service account email to grant GCP permissions
+* Temporary credentials are injected during runs

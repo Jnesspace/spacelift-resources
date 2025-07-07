@@ -1,108 +1,59 @@
-METADATA:
-  resource_type: spacelift_context
-  provider: spacelift
-  service: configuration
-  description: Reusable configuration collection for Spacelift resources
-  version: latest
+# Resource: spacelift_context
 
-USAGE_TEMPLATE:
+## Description
+A context is a collection of configuration elements (environment variables, mounted files, and hooks) that can be attached to multiple stacks or modules to share common configuration.
+
+## Example Usage
 ```hcl
-resource "spacelift_context" "RESOURCE_NAME" {
-  name        = CONTEXT_NAME
-  description = DESCRIPTION    # Optional
-  labels      = [LABELS]      # Optional
-  space_id    = SPACE_ID      # Optional
+# Production context with shared configuration
+resource "spacelift_context" "production" {
+  name        = "production-config"
+  description = "Shared production environment configuration"
+  labels      = ["production", "shared"]
+  
+  # Lifecycle hooks
+  before_init = ["echo 'Starting production deployment'"]
+  after_apply = ["./notify-deployment.sh"]
+}
+
+# Development context
+resource "spacelift_context" "development" {
+  name        = "dev-config"
+  description = "Development environment configuration"
+  space_id    = spacelift_space.development.id
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Context identifier
-      validation: Must be unique in account
+## Argument Reference
 
-  optional:
-    description:
-      type: String
-      description: Human-readable context description
-      
-    labels:
-      type: Set[String]
-      description: Classification and automation tags
-      note: Use autoattach:<label> format for auto-attachment
-      default: []
-      
-    space_id:
-      type: String
-      description: Target space identifier
-      default: root or legacy space
+### Required Arguments
+* `name` - (Required) Unique context identifier within the account
 
-    # Hook Scripts
-    before_init:
-      type: List[String]
-      description: Pre-initialization commands
-      
-    after_init:
-      type: List[String]
-      description: Post-initialization commands
-      
-    before_plan:
-      type: List[String]
-      description: Pre-plan commands
-      
-    after_plan:
-      type: List[String]
-      description: Post-plan commands
-      
-    before_apply:
-      type: List[String]
-      description: Pre-apply commands
-      
-    after_apply:
-      type: List[String]
-      description: Post-apply commands
-      
-    before_perform:
-      type: List[String]
-      description: Pre-perform commands
-      
-    after_perform:
-      type: List[String]
-      description: Post-perform commands
-      
-    before_destroy:
-      type: List[String]
-      description: Pre-destroy commands
-      
-    after_destroy:
-      type: List[String]
-      description: Post-destroy commands
-      
-    after_run:
-      type: List[String]
-      description: Post-run commands
+### Optional Arguments
+* `description` - (Optional) Human-readable description of the context
+* `labels` - (Optional) Set of labels for context classification and auto-attachment
+* `space_id` - (Optional) ID of the space the context belongs to. Defaults to root space
+* `before_init` - (Optional) List of commands to run before initialization
+* `after_init` - (Optional) List of commands to run after initialization
+* `before_plan` - (Optional) List of commands to run before planning
+* `after_plan` - (Optional) List of commands to run after planning
+* `before_apply` - (Optional) List of commands to run before applying
+* `after_apply` - (Optional) List of commands to run after applying
+* `before_destroy` - (Optional) List of commands to run before destroying
+* `after_destroy` - (Optional) List of commands to run after destroying
+* `before_perform` - (Optional) List of commands to run before performing
+* `after_perform` - (Optional) List of commands to run after performing
+* `after_run` - (Optional) List of commands to run after any run completes
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-BEHAVIOR:
-  sharing:
-    - Can be attached to multiple stacks and modules
-    - Requires explicit attachment via spacelift_context_attachment
-    - Supports inheritance in space hierarchy
-    
-  automation:
-    - Supports autoattach via labels
-    - Provides extensive hook system
-    - Hooks run in defined order
-    
-  configuration:
-    - Can contain environment variables
-    - Can contain mounted files
-    - Configuration inherited by attached resources
+## Import
+```bash
+terraform import spacelift_context.example $CONTEXT_ID
+```
 
-IMPORT_FORMAT: $CONTEXT_ID
+## Notes
+* Contexts can be attached to multiple stacks/modules using `spacelift_context_attachment`
+* Labels starting with "autoattach:" enable automatic attachment to matching resources
+* Hook scripts run in the order they are defined

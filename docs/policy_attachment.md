@@ -1,65 +1,41 @@
-METADATA:
-  resource_type: spacelift_policy_attachment
-  provider: spacelift
-  service: governance
-  description: Links policies to stacks or modules for rule enforcement
-  version: latest
+# Resource: spacelift_policy_attachment
 
-USAGE_TEMPLATE:
+## Description
+Attaches a policy to a stack or module, enabling the policy's rules to be evaluated during the target resource's operations.
+
+## Example Usage
 ```hcl
-resource "spacelift_policy_attachment" "RESOURCE_NAME" {
-  policy_id = POLICY_ID
-  # One of the following must be set:
-  stack_id  = STACK_ID   # Optional if module_id is set
-  module_id = MODULE_ID  # Optional if stack_id is set
+# Attach plan policy to stack
+resource "spacelift_policy_attachment" "no_weekend_deploys" {
+  policy_id = spacelift_policy.weekend_block.id
+  stack_id  = spacelift_stack.production.id
+}
+
+# Attach access policy to module
+resource "spacelift_policy_attachment" "module_access" {
+  policy_id = spacelift_policy.team_access.id
+  module_id = spacelift_module.vpc.id
 }
 ```
 
-ATTRIBUTES:
-  required:
-    policy_id:
-      type: String
-      description: Policy to attach
-      validation: Must exist and not be LOGIN type
+## Argument Reference
 
-  optional:
-    stack_id:
-      type: String
-      description: Target stack identifier
-      validation: Must exist if module_id not set
-      note: Mutually exclusive with module_id
-      
-    module_id:
-      type: String
-      description: Target module identifier
-      validation: Must exist if stack_id not set
-      note: Mutually exclusive with stack_id
+### Required Arguments
+* `policy_id` - (Required) ID of the policy to attach
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Optional Arguments
+* `stack_id` - (Optional) ID of the stack to attach the policy to. Mutually exclusive with `module_id`
+* `module_id` - (Optional) ID of the module to attach the policy to. Mutually exclusive with `stack_id`
 
-BEHAVIOR:
-  attachment:
-    - One policy per stack/module
-    - LOGIN policies cannot be attached
-    - Target must be either stack or module
-    
-  validation:
-    - Policy must exist
-    - Target must exist
-    - Cannot attach same policy twice
-    
-  scope:
-    - Policies affect attached resource
-    - Stack attachments affect stack runs
-    - Module attachments affect module tests
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-LIMITATIONS:
-  - LOGIN policies are global only
-  - Cannot attach to both stack and module
-  - One policy per target resource
+## Import
+```bash
+terraform import spacelift_policy_attachment.example $POLICY_ID/$STACK_ID
+```
 
-IMPORT_FORMAT: $POLICY_ID/$STACK_ID
+## Notes
+* Exactly one of `stack_id` or `module_id` must be specified
+* LOGIN policies cannot be attached as they apply globally
+* Each policy can only be attached once per stack/module

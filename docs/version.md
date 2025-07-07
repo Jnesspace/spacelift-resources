@@ -1,24 +1,41 @@
+# Resource: spacelift_version
 
-spacelift_version (Resource)
+## Description
+Manages version tags for modules, allowing semantic versioning and controlled releases of Terraform modules in Spacelift.
 
-spacelift_version allows to programmatically trigger a module version creation in response to arbitrary changes in the keepers section.
-Schema
-Required
+## Example Usage
+```hcl
+# Create a version tag for a module
+resource "spacelift_version" "vpc_v1_0_0" {
+  module_id   = spacelift_module.vpc.id
+  version_number = "1.0.0"
+  commit_sha  = "abc123def456789"
+  description = "Initial stable release of VPC module"
+}
 
-    module_id (String) ID of the module on which the version creation is to be triggered.
+# Pre-release version
+resource "spacelift_version" "vpc_beta" {
+  module_id      = spacelift_module.vpc.id
+  version_number = "1.1.0-beta.1"
+  commit_sha     = "def456abc123789"
+  description    = "Beta release with new features"
+}
+```
 
-Optional
+## Argument Reference
 
-    commit_sha (String) The commit SHA for which to trigger a version.
-    keepers (Map of String) Arbitrary map of values that, when changed, will trigger recreation of the resource.
-    version_number (String) A semantic version number to set for the triggered version, example: 0.11.2
+### Required Arguments
+* `module_id` - (Required) ID of the module to create a version for
+* `version_number` - (Required) Semantic version number (e.g., "1.0.0")
+* `commit_sha` - (Required) Git commit SHA to tag as this version
 
-Read-Only
+### Optional Arguments
+* `description` - (Optional) Human-readable description of this version
 
-    id (String) The ID of the triggered version.
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-On this page
-
-    Schema
-
-Report an issue 
+## Notes
+* Version numbers should follow semantic versioning conventions
+* Commit SHA must exist in the module's repository
+* Versions enable controlled consumption of modules by stacks

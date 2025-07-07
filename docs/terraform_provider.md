@@ -1,37 +1,47 @@
+# Resource: spacelift_terraform_provider
 
-spacelift_terraform_provider (Resource)
+## Description
+Configures a custom Terraform provider for use in Spacelift stacks, allowing integration with provider registries or custom provider builds.
 
-spacelift_terraform_provider represents a Terraform provider in Spacelift's own provider registry.
-Example Usage
-
-resource "spacelift_terraform_provider" "datadog" {
-  type     = "datadog"
-  space_id = "root"
-
-  description = "Our fork of the Datadog provider"
-  labels      = ["fork"]
-  public      = false
+## Example Usage
+```hcl
+# Public registry provider
+resource "spacelift_terraform_provider" "aws_custom" {
+  type         = "aws"
+  space_id     = spacelift_space.production.id
+  public       = true
+  description  = "Custom AWS provider configuration"
+  labels       = ["aws", "custom"]
 }
 
-Schema
-Required
+# Private provider with GPG key
+resource "spacelift_terraform_provider" "internal" {
+  type              = "internal"
+  space_id          = "root"
+  public            = false
+  description       = "Internal company provider"
+  gpg_key_id        = "1234567890ABCDEF"
+  gpg_ascii_armor   = file("${path.module}/provider-key.asc")
+}
+```
 
-    space_id (String) ID (slug) of the space the provider is in
-    type (String) Type of the provider - should be unique in one account
+## Argument Reference
 
-Optional
+### Required Arguments
+* `type` - (Required) Provider type/name
 
-    description (String) Free-form description for human users, supports Markdown
-    labels (Set of String)
-    public (Boolean) Whether the provider is public or not, defaults to false (private)
+### Optional Arguments
+* `space_id` - (Optional) ID of the space the provider belongs to. Defaults to `"root"`
+* `public` - (Optional) Whether the provider is publicly accessible. Defaults to `false`
+* `description` - (Optional) Human-readable description of the provider
+* `labels` - (Optional) Set of labels for provider classification
+* `gpg_key_id` - (Optional) GPG key ID for provider verification
+* `gpg_ascii_armor` - (Optional) GPG public key in ASCII armor format
 
-Read-Only
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-    id (String) The ID of this resource.
-
-On this page
-
-    Example Usage
-    Schema
-
-Report an issue 
+## Notes
+* Custom providers can override default registry providers
+* GPG verification is recommended for security
+* Public providers can be shared across spaces

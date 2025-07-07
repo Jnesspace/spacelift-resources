@@ -1,101 +1,54 @@
-METADATA:
-  resource_type: spacelift_user
-  provider: spacelift
-  service: access_control
-  description: User access management with Identity Provider integration
-  version: latest
+# Resource: spacelift_user
 
-USAGE_TEMPLATE:
+## Description
+Manages user access and permissions in Spacelift by mapping Identity Provider users to space-level roles and permissions.
+
+## Example Usage
 ```hcl
-resource "spacelift_user" "RESOURCE_NAME" {
-  username         = USERNAME
-  invitation_email = EMAIL_ADDRESS   # Required for new users
+# Basic user with single space access
+resource "spacelift_user" "developer" {
+  username         = "john.doe"
+  invitation_email = "john.doe@company.com"
   
   policy {
-    space_id = SPACE_ID
-    role     = ROLE_TYPE    # READ, WRITE, or ADMIN
+    space_id = spacelift_space.development.id
+    role     = "WRITE"
+  }
+}
+
+# User with multiple space access
+resource "spacelift_user" "admin" {
+  username         = "admin.user"
+  invitation_email = "admin@company.com"
+  
+  policy {
+    space_id = "root"
+    role     = "ADMIN"
+  }
+  
+  policy {
+    space_id = spacelift_space.production.id
+    role     = "ADMIN"
   }
 }
 ```
 
-ATTRIBUTES:
-  required:
-    username:
-      type: String
-      description: User identifier
-      validation: Must match IdP username
-      
-    policy:
-      type: Block Set
-      min: 1
-      description: Space access policies
-      fields:
-        space_id:
-          type: String
-          description: Target space identifier
-          required: true
-          validation: Must exist in Spacelift
-        role:
-          type: String
-          description: Access level in space
-          required: true
-          allowed_values:
-            - READ
-            - WRITE
-            - ADMIN
+## Argument Reference
 
-  optional:
-    invitation_email:
-      type: String
-      description: User invitation email
-      validation: Must be valid email
-      note: Required for new users, optional for existing
+### Required Arguments
+* `username` - (Required) Username from the Identity Provider
+* `policy` - (Required) One or more space access policies
+  * `space_id` - (Required) ID of the space to grant access to
+  * `role` - (Required) Access level. Valid values: `READ`, `WRITE`, `ADMIN`
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Optional Arguments
+* `invitation_email` - (Optional) Email address for user invitation. Required for new users
 
-BEHAVIOR:
-  access_control:
-    - Managed through IdP
-    - Role-based permissions
-    - Space-level granularity
-    
-  roles:
-    READ:
-      - View resources
-      - Read configurations
-      - Access logs
-    WRITE:
-      - Create resources
-      - Modify configurations
-      - Trigger runs
-    ADMIN:
-      - Manage users
-      - Configure policies
-      - Full control
-    
-  invitation:
-    - Email-based onboarding
-    - Required for new users
-    - Optional for existing
-    
-  validation:
-    - Username must exist in IdP
-    - Valid email required
-    - At least one policy needed
-    - Space must exist
-    - Role must be valid
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-INTEGRATION:
-  identity_provider:
-    - Manages user identities
-    - Handles authentication
-    - Syncs user information
-    
-  policies:
-    - Define access rights
-    - Control space access
-    - Set permission levels
+## Notes
+* Users must exist in the configured Identity Provider
+* Multiple policies can be defined for access to different spaces
+* Role hierarchy: READ < WRITE < ADMIN
+* Invitation email is required when creating new users

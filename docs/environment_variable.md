@@ -1,94 +1,67 @@
-METADATA:
-  resource_type: spacelift_environment_variable
-  provider: spacelift
-  service: configuration
-  description: Environment variable configuration for Spacelift entities
-  version: latest
+# Resource: spacelift_environment_variable
 
-USAGE_TEMPLATE:
+## Description
+Environment variables that can be defined on contexts, stacks, or modules to pass configuration and secrets to Spacelift runs.
+
+## Example Usage
 ```hcl
-resource "spacelift_environment_variable" "RESOURCE_NAME" {
-  name        = ENV_VAR_NAME
-  value       = ENV_VAR_VALUE
-  # One of the following must be set:
-  context_id  = CONTEXT_ID    # Optional
-  module_id   = MODULE_ID     # Optional
-  stack_id    = STACK_ID      # Optional
-  write_only  = true         # Optional
-  description = DESCRIPTION   # Optional
+# Stack environment variable
+resource "spacelift_environment_variable" "api_key" {
+  stack_id    = spacelift_stack.api.id
+  name        = "API_KEY"
+  value       = var.api_key
+  write_only  = true
+  description = "API key for external service"
+}
+
+# Context environment variable
+resource "spacelift_environment_variable" "region" {
+  context_id  = spacelift_context.production.id
+  name        = "AWS_DEFAULT_REGION"
+  value       = "us-east-1"
+  write_only  = false
+  description = "Default AWS region"
+}
+
+# Module environment variable
+resource "spacelift_environment_variable" "vpc_cidr" {
+  module_id   = spacelift_module.vpc.id
+  name        = "VPC_CIDR"
+  value       = "10.0.0.0/16"
+  description = "VPC CIDR block for module testing"
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Environment variable identifier
-      validation: Must be valid environment variable name
+## Argument Reference
 
-  optional:
-    context_id:
-      type: String
-      description: Target context identifier
-      validation: Must exist if module_id and stack_id not set
-      note: Mutually exclusive with module_id and stack_id
-      
-    module_id:
-      type: String
-      description: Target module identifier
-      validation: Must exist if context_id and stack_id not set
-      note: Mutually exclusive with context_id and stack_id
-      
-    stack_id:
-      type: String
-      description: Target stack identifier
-      validation: Must exist if context_id and module_id not set
-      note: Mutually exclusive with context_id and module_id
-      
-    value:
-      type: String
-      description: Environment variable value
-      default: ""
-      sensitive: true
-      
-    write_only:
-      type: Boolean
-      description: Marks value as secret
-      default: true
-      
-    description:
-      type: String
-      description: Human-readable variable description
-      default: ""
+### Required Arguments
+* `name` - (Required) Environment variable name
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    checksum:
-      type: String
-      description: SHA-256 hash of value
-      generated: true
+### Optional Arguments
+* `context_id` - (Optional) Context to attach the variable to. Mutually exclusive with `stack_id` and `module_id`
+* `stack_id` - (Optional) Stack to attach the variable to. Mutually exclusive with `context_id` and `module_id`
+* `module_id` - (Optional) Module to attach the variable to. Mutually exclusive with `context_id` and `stack_id`
+* `value` - (Optional) Environment variable value. Defaults to empty string
+* `write_only` - (Optional) Whether the value is secret. Defaults to `true`
+* `description` - (Optional) Human-readable description
 
-BEHAVIOR:
-  scope:
-    - Can be defined on contexts, modules, or stacks
-    - Must specify exactly one target entity
-    - Inheritance follows context attachment hierarchy
-    
-  security:
-    - Write-only values are masked in logs
-    - Values are encrypted at rest
-    - Checksums enable value verification
-    
-  validation:
-    - Requires valid environment variable name
-    - Cannot have duplicate names in same scope
-    - Target entity must exist
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `checksum` - SHA-256 checksum of the value
 
-IMPORT_FORMAT:
-  context: context/$CONTEXT_ID/$ENV_VAR_NAME
-  module: module/$MODULE_ID/$ENV_VAR_NAME
-  stack: stack/$STACK_ID/$ENV_VAR_NAME
+## Import
+```bash
+# For context variables
+terraform import spacelift_environment_variable.example context/$CONTEXT_ID/$VARIABLE_NAME
+
+# For stack variables  
+terraform import spacelift_environment_variable.example stack/$STACK_ID/$VARIABLE_NAME
+
+# For module variables
+terraform import spacelift_environment_variable.example module/$MODULE_ID/$VARIABLE_NAME
+```
+
+## Notes
+* Exactly one of `context_id`, `stack_id`, or `module_id` must be specified
+* Write-only variables are masked in logs and outputs
+* Variables inherit from attached contexts based on priority

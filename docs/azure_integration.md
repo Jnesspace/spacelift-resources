@@ -1,98 +1,50 @@
-# spacelift_azure_integration
+# Resource: spacelift_azure_integration
 
-METADATA:
-  resource_type: spacelift_azure_integration
-  provider: spacelift
-  service: cloud_integration
-  description: Azure AD tenant integration for Spacelift resource management
-  version: latest
+## Description
+Configures Azure integration for secure, credential-less access to Azure resources using Azure Active Directory service principals. Integrations can be shared across multiple stacks and modules.
 
-USAGE_TEMPLATE:
+## Example Usage
 ```hcl
-resource "spacelift_azure_integration" "RESOURCE_NAME" {
-  name                    = INTEGRATION_NAME
-  tenant_id               = AZURE_TENANT_ID
-  default_subscription_id = SUBSCRIPTION_ID
-  labels                  = [LABEL_VALUES]
+# Basic Azure integration
+resource "spacelift_azure_integration" "production" {
+  name         = "production-azure"
+  tenant_id    = "12345678-1234-1234-1234-123456789012"
+  client_id    = "87654321-4321-4321-4321-210987654321"
+  client_secret = var.azure_client_secret
+  space_id     = spacelift_space.production.id
+}
+
+# Azure integration with custom configuration
+resource "spacelift_azure_integration" "development" {
+  name         = "dev-azure"
+  tenant_id    = var.azure_tenant_id
+  client_id    = var.azure_client_id
+  client_secret = var.azure_client_secret
+  labels       = ["azure", "development"]
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Friendly identifier for the integration
-      validation: none
-    
-    tenant_id:
-      type: String
-      description: Azure AD tenant identifier
-      validation: Valid UUID format
+## Argument Reference
 
-  optional:
-    default_subscription_id:
-      type: String
-      description: Default Azure subscription for resource management
-      validation: Valid UUID format
-    
-    labels:
-      type: Set[String]
-      description: Resource classification tags
-      default: []
-      validation: none
-    
-    space_id:
-      type: String
-      description: Target space identifier
-      validation: Must exist in Spacelift
+### Required Arguments
+* `name` - (Required) Unique integration identifier
+* `tenant_id` - (Required) Azure Active Directory tenant ID
+* `client_id` - (Required) Azure service principal client ID
+* `client_secret` - (Required) Azure service principal client secret
 
-  computed:
-    admin_consent_provided:
-      type: Boolean
-      description: Confirmation of admin consent status
-      generated: true
-    
-    admin_consent_url:
-      type: String
-      description: URL for granting admin consent
-      generated: true
-    
-    application_id:
-      type: String
-      description: Azure AD application identifier
-      generated: true
-    
-    display_name:
-      type: String
-      description: Auto-generated Azure application name
-      generated: true
-      immutable: true
-    
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Optional Arguments
+* `space_id` - (Optional) ID of the space the integration belongs to. Defaults to `"root"`
+* `labels` - (Optional) Set of labels for integration classification
 
-BEHAVIOR:
-  requirements:
-    - Explicit stack attachment required after creation
-    - Manual admin consent required via admin_consent_url
-    - Application display name cannot be modified without recreation
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-  permissions:
-    - Azure AD application permissions must be granted
-    - Subscription access must be configured if specified
-    
-  lifecycle:
-    create:
-      - Azure AD application is created
-      - Admin consent URL is generated
-      - Awaits manual consent
-    
-    update:
-      - Most fields can be modified
-      - display_name changes require recreation
-      
-    delete:
-      - Removes Azure AD application
-      - Revokes all access
+## Import
+```bash
+terraform import spacelift_azure_integration.example $INTEGRATION_ID
+```
+
+## Notes
+* Integrations can be attached to multiple stacks/modules using `spacelift_azure_integration_attachment`
+* Service principal must have appropriate permissions for target Azure resources
+* Client secret is stored securely and not returned after creation

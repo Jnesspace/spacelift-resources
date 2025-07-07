@@ -1,85 +1,60 @@
-# spacelift_aws_integration
+# Resource: spacelift_aws_integration
 
-METADATA:
-  resource_type: spacelift_aws_integration
-  provider: spacelift
-  service: cloud_integration
-  description: AWS account integration for Spacelift resource management
-  version: latest
+## Description
+Configures AWS integration for secure, credential-less access to AWS resources. AWS integrations can be shared across multiple stacks and modules, with separate read and write IAM roles for enhanced security.
 
-USAGE_TEMPLATE:
+## Example Usage
 ```hcl
-resource "spacelift_aws_integration" "RESOURCE_NAME" {
-  name = INTEGRATION_NAME
-  role_arn = IAM_ROLE_ARN
-  generate_credentials_in_worker = BOOLEAN
+# Basic AWS integration
+resource "spacelift_aws_integration" "production" {
+  name                           = "production-aws"
+  role_arn                       = aws_iam_role.spacelift_production.arn
+  generate_credentials_in_worker = false
+  space_id                       = spacelift_space.production.id
+}
+
+# AWS integration with separate read/write roles
+resource "spacelift_aws_integration" "secure" {
+  name                           = "secure-aws"
+  role_arn                       = aws_iam_role.spacelift_write.arn
+  read_role_arn                  = aws_iam_role.spacelift_read.arn
+  generate_credentials_in_worker = false
+  external_id                    = "custom-external-id"
+  duration_seconds               = 3600
+}
+
+# Private worker integration
+resource "spacelift_aws_integration" "private" {
+  name                           = "private-worker-aws"
+  role_arn                       = aws_iam_role.spacelift_private.arn
+  generate_credentials_in_worker = true
+  external_id                    = var.private_worker_external_id
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Friendly identifier for the integration
-      validation: none
-    
-    role_arn:
-      type: String
-      description: AWS IAM role ARN to be assumed
-      validation: Must be valid ARN format
+## Argument Reference
 
-  optional:
-    duration_seconds:
-      type: Number
-      description: Validity period for assumed credentials
-      default: 900
-      validation: 900-3600 seconds
-    
-    external_id:
-      type: String
-      description: Custom external ID for role assumption
-      applies_to: Private workers only
-      validation: none
-    
-    generate_credentials_in_worker:
-      type: Boolean
-      description: Enable AWS credential generation in private worker
-      default: false
-      validation: none
-    
-    labels:
-      type: Set[String]
-      description: Resource classification tags
-      default: []
-      validation: none
-    
-    region:
-      type: String
-      description: AWS region for STS endpoint selection
-      validation: Valid AWS region
-    
-    space_id:
-      type: String
-      description: Target space identifier
-      validation: Must exist in Spacelift
+### Required Arguments
+* `name` - (Required) Unique integration identifier
+* `role_arn` - (Required) ARN of the AWS IAM role for write operations
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Optional Arguments
+* `read_role_arn` - (Optional) ARN of the AWS IAM role for read operations. If not specified, `role_arn` is used for both
+* `generate_credentials_in_worker` - (Optional) Generate credentials in private worker. Defaults to `false`
+* `external_id` - (Optional) Custom external ID for enhanced security. Auto-generated if not specified
+* `duration_seconds` - (Optional) Session duration in seconds. Defaults to 3600
+* `space_id` - (Optional) ID of the space the integration belongs to. Defaults to `"root"`
+* `labels` - (Optional) Set of labels for integration classification
 
-BEHAVIOR:
-  session_naming:
-    format: "$runID@$stackID@$accountName"
-    max_length: 64
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-  external_id_format:
-    stack: "$accountName@$integrationID@$stackID@$suffix"
-    module: "$accountName@$integrationID@$moduleID@$suffix"
-    suffix_values: ["read", "write"]
+## Import
+```bash
+terraform import spacelift_aws_integration.example $INTEGRATION_ID
+```
 
-  requirements:
-    - Explicit stack attachment required after creation
-    - IAM role must trust Spacelift's AWS account
-    - Role must have necessary permissions for intended operations
+## Notes
+* Integrations can be attached to multiple stacks/modules using `spacelift_aws_integration_attachment`
+* Separate read/write roles enable principle of least privilege
+* External ID enhances security for cross-account access

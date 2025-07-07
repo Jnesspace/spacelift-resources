@@ -1,151 +1,58 @@
-METADATA:
-  resource_type: spacelift_stack
-  provider: spacelift
-  service: core
-  description: Runtime environment combining source code and configuration for resource management
-  version: latest
+# Resource: spacelift_stack
 
-USAGE_TEMPLATE:
+## Description
+A stack is a combination of source code and configuration that allows Spacelift to manage a piece of infrastructure. Stacks are the primary execution unit in Spacelift, similar to a CloudFormation stack or a CI/CD project.
+
+## Example Usage
 ```hcl
-resource "spacelift_stack" "RESOURCE_NAME" {
-  name              = STACK_NAME
-  repository        = REPOSITORY_NAME
-  branch            = BRANCH_NAME
-  project_root      = PROJECT_PATH         # Optional
-  description       = STACK_DESCRIPTION    # Optional
-  terraform_version = TERRAFORM_VERSION    # Optional
+# Basic Terraform stack
+resource "spacelift_stack" "example" {
+  name              = "my-infrastructure"
+  repository        = "terraform-infrastructure"
+  branch            = "main"
+  project_root      = "environments/production"
+  description       = "Production infrastructure stack"
+  terraform_version = "1.5.0"
+  autodeploy        = true
+}
+
+# Administrative stack
+resource "spacelift_stack" "admin" {
+  name           = "spacelift-admin"
+  repository     = "spacelift-config"
+  branch         = "main"
+  administrative = true
+  description    = "Manages other Spacelift resources"
 }
 ```
 
-ATTRIBUTES:
-  required:
-    branch:
-      type: String
-      description: Git branch to apply changes to
-      validation: Must be valid git branch name
-    
-    name:
-      type: String
-      description: Unique stack identifier within account
-      validation: Must be unique
-    
-    repository:
-      type: String
-      description: Repository name without owner part
-      validation: Must exist in VCS
+## Argument Reference
 
-  optional:
-    administrative:
-      type: Boolean
-      description: Stack can manage other stacks
-      default: false
-      
-    autodeploy:
-      type: Boolean
-      description: Enables automatic deployment of changes
-      default: false
-      
-    project_root:
-      type: String
-      description: Directory containing stack entrypoint
-      default: ""
-      
-    terraform_version:
-      type: String
-      description: Terraform version to use
-      validation: Valid semver
-      
-    description:
-      type: String
-      description: Human-readable stack description
-      
-    labels:
-      type: Set[String]
-      description: Stack classification tags
-      default: []
+### Required Arguments
+* `name` - (Required) Unique stack identifier within the account
+* `repository` - (Required) Repository name without the owner part
+* `branch` - (Required) Git branch to apply changes to
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    aws_assume_role_policy_statement:
-      type: String
-      description: AWS IAM assume role policy for trust setup
-      generated: true
+### Optional Arguments
+* `administrative` - (Optional) Whether the stack can manage other stacks. Defaults to `false`
+* `autodeploy` - (Optional) Enable automatic deployment of changes. Defaults to `false`
+* `description` - (Optional) Human-readable description of the stack
+* `project_root` - (Optional) Directory containing the stack's entrypoint. Defaults to repository root
+* `terraform_version` - (Optional) Terraform version to use
+* `labels` - (Optional) Set of labels for stack classification
+* `space_id` - (Optional) ID of the space the stack belongs to. Defaults to root space
+* `worker_pool_id` - (Optional) ID of the worker pool to use for runs
 
-INTEGRATIONS:
-  vcs_providers:
-    - github (default)
-    - github_enterprise
-    - gitlab
-    - bitbucket_cloud
-    - bitbucket_datacenter
-    - azure_devops
-    - raw_git
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `aws_assume_role_policy_statement` - AWS IAM assume role policy for trust setup
 
-  stack_types:
-    terraform:
-      default: true
-      version_required: true
-      
-    terragrunt:
-      config:
-        terraform_version: String
-        terragrunt_version: String
-        use_run_all: Boolean
-        use_smart_sanitization: Boolean
-        
-    cloudformation:
-      config:
-        entry_template_file: String (required)
-        region: String (required)
-        stack_name: String (required)
-        template_bucket: String (required)
-        
-    pulumi:
-      config:
-        login_url: String (required)
-        stack_name: String (required)
-        
-    kubernetes:
-      config:
-        namespace: String
-        kubectl_version: String
-        
-    ansible:
-      config:
-        playbook: String (required)
+## Import
+```bash
+terraform import spacelift_stack.example $STACK_ID
+```
 
-BEHAVIOR:
-  state_management:
-    - Manages state by default (manage_state=true)
-    - Can enable external state access (terraform_external_state_access)
-    - Supports state import on creation
-    
-  security:
-    - Deletion protection available
-    - Sensitive output handling
-    - Well-known secret masking
-    
-  automation:
-    - Supports automatic deployment (autodeploy)
-    - Supports local preview runs
-    - Configurable worker pools
-    - Extensive hook system (before/after scripts)
-
-  hooks:
-    before:
-      - init
-      - plan
-      - apply
-      - perform
-      - destroy
-    after:
-      - init
-      - plan
-      - apply
-      - perform
-      - destroy
-      - run
+## Notes
+* Stack names must be unique within the account
+* Administrative stacks have elevated privileges and can manage other Spacelift resources
+* Autodeploy requires proper permissions and policies to be configured

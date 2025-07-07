@@ -1,121 +1,44 @@
-spacelift_context_attachment (Resource)
+# Resource: spacelift_context_attachment
 
-spacelift_context_attachment represents a Spacelift attachment of a single context to a single stack or module, with a predefined priority.
-Example Usage
+## Description
+Attaches a context to a stack or module with a specified priority, allowing the target resource to inherit the context's configuration (environment variables, mounted files, and hooks).
 
-# For a stack
-resource "spacelift_context_attachment" "attachment" {
-  context_id = "prod-k8s-ie"
-  stack_id   = "k8s-core"
-  priority   = 0
-}
-
-# For a module
-resource "spacelift_context_attachment" "attachment" {
-  context_id = "prod-k8s-ie"
-  module_id  = "k8s-module"
-  priority   = 0
-}
-
-Schema
-Required
-
-    context_id (String) ID of the context to attach
-
-Optional
-
-    module_id (String) ID of the module to attach the context to
-    priority (Number) Priority of the context attachment. All the contexts attached to a stack are sorted by priority (lowest first), though values don't need to be unique. This ordering establishes precedence rules between contexts should there be a conflict and multiple contexts define the same value. Defaults to 0.
-    stack_id (String) ID of the stack to attach the context to
-
-Read-Only
-
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_context_attachment.test_stack $CONTEXT_ID/$STACK_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue
-
-METADATA:
-  resource_type: spacelift_context_attachment
-  provider: spacelift
-  service: configuration
-  description: Links contexts to stacks or modules with priority ordering
-  version: latest
-
-USAGE_TEMPLATE:
+## Example Usage
 ```hcl
-resource "spacelift_context_attachment" "RESOURCE_NAME" {
-  context_id = CONTEXT_ID
-  # One of the following must be set:
-  stack_id   = STACK_ID    # Optional if module_id is set
-  module_id  = MODULE_ID   # Optional if stack_id is set
-  priority   = 0          # Optional, defaults to 0
+# Attach context to stack
+resource "spacelift_context_attachment" "production_stack" {
+  context_id = spacelift_context.production.id
+  stack_id   = spacelift_stack.api.id
+  priority   = 0
+}
+
+# Attach context to module with higher priority
+resource "spacelift_context_attachment" "shared_config" {
+  context_id = spacelift_context.shared.id
+  module_id  = spacelift_module.vpc.id
+  priority   = 10
 }
 ```
 
-ATTRIBUTES:
-  required:
-    context_id:
-      type: String
-      description: Context to attach
-      validation: Must exist in Spacelift
+## Argument Reference
 
-  optional:
-    stack_id:
-      type: String
-      description: Target stack identifier
-      validation: Must exist if module_id not set
-      note: Mutually exclusive with module_id
-      
-    module_id:
-      type: String
-      description: Target module identifier
-      validation: Must exist if stack_id not set
-      note: Mutually exclusive with stack_id
-      
-    priority:
-      type: Number
-      description: Attachment priority order
-      default: 0
-      note: Lower values processed first
+### Required Arguments
+* `context_id` - (Required) ID of the context to attach
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Optional Arguments
+* `stack_id` - (Optional) ID of the stack to attach the context to. Mutually exclusive with `module_id`
+* `module_id` - (Optional) ID of the module to attach the context to. Mutually exclusive with `stack_id`
+* `priority` - (Optional) Priority of the attachment (lower numbers processed first). Defaults to `0`
 
-BEHAVIOR:
-  priority:
-    - Determines context processing order
-    - Lower numbers processed first
-    - Values don't need to be unique
-    - Used to resolve configuration conflicts
-    
-  attachment:
-    - One context per attachment
-    - One attachment per context-target pair
-    - Target must be stack or module
-    
-  inheritance:
-    - Configuration inherited by target
-    - Priority affects conflict resolution
-    - Later contexts override earlier ones
-    
-  validation:
-    - Context must exist
-    - Target must exist
-    - Cannot attach to both stack and module
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-IMPORT_FORMAT: $CONTEXT_ID/$STACK_ID
+## Import
+```bash
+terraform import spacelift_context_attachment.example $CONTEXT_ID/$STACK_ID
+```
+
+## Notes
+* Exactly one of `stack_id` or `module_id` must be specified
+* Lower priority numbers are processed first in case of conflicts
+* Multiple contexts can be attached to the same stack/module with different priorities

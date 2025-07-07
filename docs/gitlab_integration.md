@@ -1,141 +1,67 @@
-METADATA:
-  resource_type: spacelift_gitlab_integration
-  provider: spacelift
-  service: vcs_integration
-  description: GitLab instance integration configuration
-  version: latest
+# Resource: spacelift_gitlab_integration
 
-USAGE_TEMPLATE:
+## Description
+Configures integration with a GitLab instance (GitLab.com or self-hosted) to enable repository access and webhook functionality for Spacelift stacks and modules.
+
+## Example Usage
 ```hcl
-resource "spacelift_gitlab_integration" "RESOURCE_NAME" {
-  name             = INTEGRATION_NAME
-  api_host         = API_HOST         # URL or private://hostname
-  user_facing_host = UI_HOST
-  private_token    = GITLAB_TOKEN
-  is_default       = false           # Optional
-  space_id         = SPACE_ID        # Optional, defaults to root
-  vcs_checks       = CHECK_TYPE      # Optional
+# Public GitLab.com integration
+resource "spacelift_gitlab_integration" "gitlab_com" {
+  name             = "gitlab-com-integration"
+  api_host         = "https://gitlab.com"
+  user_facing_host = "https://gitlab.com"
+  private_token    = var.gitlab_token
+  space_id         = "root"
+  is_default       = true
+}
+
+# Self-hosted GitLab integration
+resource "spacelift_gitlab_integration" "gitlab_internal" {
+  name             = "gitlab-internal"
+  api_host         = "https://gitlab.company.com"
+  user_facing_host = "https://gitlab.company.com"
+  private_token    = var.gitlab_internal_token
+  description      = "Internal GitLab instance"
+  labels           = ["internal", "gitlab"]
+  vcs_checks       = "AGGREGATED"
+}
+
+# Private GitLab with VCS agent
+resource "spacelift_gitlab_integration" "gitlab_private" {
+  name             = "gitlab-private"
+  api_host         = "private://gitlab-internal"
+  user_facing_host = "https://gitlab.internal.company.com"
+  private_token    = var.gitlab_private_token
+  vcs_checks       = "ALL"
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Integration identifier
-      validation: Must be unique
-      
-    api_host:
-      type: String
-      description: API endpoint URL
-      validation: Valid URL or private:// scheme
-      
-    user_facing_host:
-      type: String
-      description: UI endpoint URL
-      validation: Valid HTTPS URL
-      
-    private_token:
-      type: String
-      description: GitLab API token
-      validation: Valid access token
-      sensitive: true
+## Argument Reference
 
-  optional:
-    is_default:
-      type: Boolean
-      description: Default integration status
-      default: false
-      note: Requires root space if true
-      
-    space_id:
-      type: String
-      description: Target space identifier
-      default: "root"
-      validation: Must exist in Spacelift
-      
-    description:
-      type: String
-      description: Human-readable description
-      default: ""
-      
-    labels:
-      type: Set[String]
-      description: Classification tags
-      default: []
-      
-    vcs_checks:
-      type: String
-      description: VCS check configuration
-      default: "INDIVIDUAL"
-      allowed_values:
-        - INDIVIDUAL
-        - AGGREGATED
-        - ALL
+### Required Arguments
+* `name` - (Required) Unique integration identifier
+* `api_host` - (Required) GitLab API endpoint URL or `private://hostname` for VCS agent access
+* `user_facing_host` - (Required) GitLab UI URL for user-facing links
+* `private_token` - (Required) GitLab personal access token
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    webhook_url:
-      type: String
-      description: Repository webhook URL
-      generated: true
-      
-    webhook_secret:
-      type: String
-      description: Webhook verification secret
-      generated: true
-      sensitive: true
+### Optional Arguments
+* `description` - (Optional) Human-readable description of the integration
+* `is_default` - (Optional) Whether this is the default GitLab integration. Defaults to `false`
+* `labels` - (Optional) Set of labels for integration classification
+* `space_id` - (Optional) ID of the space the integration belongs to. Defaults to `"root"`
+* `vcs_checks` - (Optional) VCS status check configuration. Valid values: `INDIVIDUAL`, `AGGREGATED`, `ALL`. Defaults to `INDIVIDUAL`
 
-BEHAVIOR:
-  connectivity:
-    public:
-      - Direct HTTPS access
-      - Standard API endpoints
-      - UI accessible publicly
-      
-    private:
-      - VCS agent pool required
-      - private:// URL scheme
-      - Internal network access
-      
-  authentication:
-    - Token-based auth
-    - Token stored securely
-    - Webhook verification
-    
-  webhooks:
-    - Automatic configuration
-    - Secret key generation
-    - Event verification
-    
-  vcs_checks:
-    INDIVIDUAL:
-      - Separate status checks
-      - Per-task reporting
-      
-    AGGREGATED:
-      - Combined status check
-      - Single report entry
-      
-    ALL:
-      - Both check types
-      - Complete reporting
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `webhook_url` - URL for GitLab webhooks
+* `webhook_secret` - Secret for webhook verification (sensitive)
 
-PATTERNS:
-  public_instance:
-    example:
-      api_host: "https://gitlab.example.com"
-      is_default: false
-    benefit: Direct connectivity
-    
-  private_instance:
-    example:
-      api_host: "private://gitlab"
-      is_default: true
-    benefit: Secure internal access
+## Import
+```bash
+terraform import spacelift_gitlab_integration.example $INTEGRATION_ID
+```
 
-IMPORT_FORMAT: $INTEGRATION_ID
+## Notes
+* Default integrations must be in the root space
+* Private access requires VCS agent pool configuration
+* Webhook URL and secret are automatically generated for repository configuration

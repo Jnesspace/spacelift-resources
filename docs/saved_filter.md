@@ -1,119 +1,91 @@
-METADATA:
-  resource_type: spacelift_saved_filter
-  provider: spacelift
-  service: organization
-  description: Custom filter criteria for Spacelift views
-  version: latest
+# Resource: spacelift_saved_filter
 
-USAGE_TEMPLATE:
+## Description
+A saved filter defines custom criteria for filtering resources in Spacelift views, allowing users to create reusable filters for stacks, modules, contexts, and webhooks.
+
+## Example Usage
 ```hcl
-resource "spacelift_saved_filter" "RESOURCE_NAME" {
-  name      = FILTER_NAME
-  type      = FILTER_TYPE    # stacks, blueprints, contexts, webhooks
-  is_public = true          # Controls visibility
-  data      = jsonencode({
-    key   = "activeFilters"
+# Public filter for team stacks
+resource "spacelift_saved_filter" "team_stacks" {
+  name      = "team-xyz-stacks"
+  type      = "stacks"
+  is_public = true
+  
+  data = jsonencode({
+    key = "activeFilters"
     value = jsonencode({
-      filters = FILTER_CRITERIA,
-      sort    = SORT_CONFIG,
-      order   = COLUMN_CONFIG
+      filters = [
+        [
+          "name",
+          {
+            key         = "name"
+            filterName  = "name"
+            type        = "STRING"
+            values      = ["team_xyz_*"]
+          }
+        ]
+      ]
+      sort = {
+        direction = "ASC"
+        option    = "space"
+      }
+      order = [
+        {
+          name    = "name"
+          visible = true
+        },
+        {
+          name    = "space"
+          visible = true
+        }
+      ]
+    })
+  })
+}
+
+# Private webhook filter
+resource "spacelift_saved_filter" "production_webhooks" {
+  name      = "production-webhooks"
+  type      = "webhooks"
+  is_public = false
+  
+  data = jsonencode({
+    key = "activeFilters"
+    value = jsonencode({
+      filters = [
+        [
+          "label",
+          {
+            key         = "label"
+            filterName  = "label"
+            type        = "STRING"
+            values      = ["production"]
+          }
+        ]
+      ]
     })
   })
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Filter identifier
-      validation: Must be unique per type
-      
-    type:
-      type: String
-      description: Target view type
-      allowed_values:
-        - stacks
-        - blueprints
-        - contexts
-        - webhooks
-        
-    is_public:
-      type: Boolean
-      description: Filter visibility
-      validation: true/false
-      
-    data:
-      type: String
-      description: JSON filter configuration
-      validation: Must be valid JSON
-      structure:
-        key: String
-        value:
-          filters: Array of criteria
-          sort: Sort configuration
-          order: Column visibility
+## Argument Reference
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    created_by:
-      type: String
-      description: Creator's login
-      generated: true
+### Required Arguments
+* `name` - (Required) Unique filter identifier
+* `type` - (Required) Target view type. Valid values: `stacks`, `blueprints`, `contexts`, `webhooks`
+* `is_public` - (Required) Whether the filter is visible to all users
+* `data` - (Required) JSON-encoded filter configuration
 
-BEHAVIOR:
-  filtering:
-    - Defines view criteria
-    - Supports multiple fields
-    - Complex filter logic
-    
-  visibility:
-    - Public or private filters
-    - Shared across users
-    - View-specific scope
-    
-  configuration:
-    - JSON-based definition
-    - Customizable columns
-    - Sorting options
-    
-  views:
-    stacks:
-      - Filter stack resources
-      - Stack-specific fields
-      - Stack organization
-    blueprints:
-      - Template filtering
-      - Blueprint management
-      - Template organization
-    contexts:
-      - Context filtering
-      - Configuration management
-      - Context grouping
-    webhooks:
-      - Webhook filtering
-      - Integration management
-      - Endpoint organization
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `created_by` - Username of the filter creator
 
-IMPORT_FORMAT: $FILTER_ID
+## Import
+```bash
+terraform import spacelift_saved_filter.example $FILTER_ID
+```
 
-EXAMPLE:
-  webhook_filter:
-    type: webhooks
-    data:
-      filters:
-        - name:
-            type: STRING
-            values: ["team_xyz_*"]
-      sort:
-        direction: ASC
-        option: space
-      order:
-        - name: enabled
-          visible: true
-        - name: endpoint
-          visible: true
+## Notes
+* Filter data must be valid JSON with specific structure
+* Public filters are available to all users in the account
+* Different types support different filter criteria

@@ -1,164 +1,70 @@
-METADATA:
-  resource_type: spacelift_scheduled_run
-  provider: spacelift
-  service: automation
-  description: Scheduled run configuration for Spacelift stacks
-  version: latest
+# Resource: spacelift_scheduled_run
 
-USAGE_TEMPLATE:
+## Description
+Configures scheduled runs for a stack, allowing automatic execution of infrastructure code at specified times or intervals.
+
+## Example Usage
 ```hcl
-resource "spacelift_scheduled_run" "RESOURCE_NAME" {
-  stack_id = STACK_ID
-  name     = SCHEDULE_NAME      # Optional
+# Daily scheduled run
+resource "spacelift_scheduled_run" "daily_apply" {
+  stack_id = spacelift_stack.production.id
+  name     = "daily-production-sync"
+  every    = ["0 2 * * *"]  # Every day at 2 AM
+  timezone = "UTC"
+}
+
+# Workday deployment schedule
+resource "spacelift_scheduled_run" "workday_deploy" {
+  stack_id = spacelift_stack.staging.id
+  name     = "workday-deployment"
+  every    = ["0 9 * * 1-5"]  # Weekdays at 9 AM
+  timezone = "America/New_York"
   
-  # Either at or every must be specified:
-  at       = TIMESTAMP         # Optional, unix timestamp
-  every    = [CRON_EXPRS]     # Optional, list of cron expressions
-  timezone = TIMEZONE         # Optional, defaults to UTC
-  
-  # Optional runtime configuration:
   runtime_config {
-    project_root  = "path/to/root"
-    runner_image  = "custom/image:tag"
+    project_root = "environments/staging"
     environment {
-      key   = "ENV_VAR"
-      value = "value"
+      key   = "DEPLOY_MODE"
+      value = "automated"
     }
   }
 }
+
+# One-time scheduled run
+resource "spacelift_scheduled_run" "maintenance" {
+  stack_id = spacelift_stack.maintenance.id
+  name     = "maintenance-window"
+  at       = 1699747200  # Specific timestamp
+}
 ```
 
-ATTRIBUTES:
-  required:
-    stack_id:
-      type: String
-      description: Target stack identifier
-      validation: Must exist in Spacelift
+## Argument Reference
 
-  optional:
-    name:
-      type: String
-      description: Schedule identifier
-      validation: Must be unique per stack
-      
-    at:
-      type: Number
-      description: Unix timestamp for one-time execution
-      validation: Must be future timestamp
-      note: Mutually exclusive with every
-      
-    every:
-      type: List[String]
-      description: Cron schedule expressions
-      validation: Must be valid cron syntax
-      note: Mutually exclusive with at
-      example: ["0 7 * * 1-5"]
-      
-    timezone:
-      type: String
-      description: Schedule timezone
-      default: "UTC"
-      validation: Must be valid timezone name
-      
-    schedule_id:
-      type: String
-      description: Custom schedule identifier
-      validation: Must be unique per stack
-      
-    runtime_config:
-      type: Block
-      max: 1
-      description: Run-specific configuration
-      fields:
-        project_root:
-          type: String
-          description: Stack entrypoint path
-          
-        runner_image:
-          type: String
-          description: Custom Docker image
-          
-        environment:
-          type: Block Set
-          description: Run environment variables
-          fields:
-            key:
-              type: String
-              description: Variable name
-              required: true
-            value:
-              type: String
-              description: Variable value
-              required: true
-              
-        hooks:
-          description: Run lifecycle hooks
-          types:
-            - before_init
-            - after_init
-            - before_plan
-            - after_plan
-            - before_apply
-            - after_apply
-            - before_destroy
-            - after_destroy
-            - before_perform
-            - after_perform
-            - after_run
+### Required Arguments
+* `stack_id` - (Required) ID of the stack to schedule runs for
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    next_schedule:
-      type: Number
-      description: Next run timestamp
-      generated: true
-      
-    terraform_version:
-      type: String
-      description: Terraform version
-      generated: true
-      
-    terraform_workflow_tool:
-      type: String
-      description: IaC execution tool
-      generated: true
-      allowed_values: ["OPEN_TOFU", "TERRAFORM_FOSS", "CUSTOM"]
-      default: "TERRAFORM_FOSS"
+### Optional Arguments
+* `name` - (Optional) Human-readable name for the scheduled run
+* `every` - (Optional) List of cron expressions for recurring runs. Mutually exclusive with `at`
+* `at` - (Optional) Unix timestamp for one-time run. Mutually exclusive with `every`
+* `timezone` - (Optional) Timezone for schedule evaluation. Defaults to `"UTC"`
+* `schedule_id` - (Optional) Custom schedule identifier
+* `runtime_config` - (Optional) Custom runtime configuration for the scheduled runs
+  * `project_root` - (Optional) Project root directory override
+  * `runner_image` - (Optional) Custom Docker image for the run
+  * `environment` - (Optional) Environment variables for the run
+    * `key` - (Required) Environment variable name
+    * `value` - (Required) Environment variable value
 
-BEHAVIOR:
-  scheduling:
-    - Supports one-time execution via timestamp
-    - Supports recurring execution via cron
-    - Timezone-aware scheduling
-    
-  runtime:
-    - Customizable environment variables
-    - Custom Docker image support
-    - Extensive hook system
-    - Project root configuration
-    
-  execution:
-    - Runs in stack's environment
-    - Uses configured worker pool
-    - Inherits stack permissions
-    
-  examples:
-    workday_apply:
-      every: ["0 7 * * 1-5"]
-      timezone: "CET"
-      name: "apply-workdays"
-      
-    one_time_run:
-      at: "1663336895"
-      name: "one-off-apply"
-      
-    custom_runtime:
-      every: ["0 21 * * 1-5"]
-      runtime_config:
-        terraform_version: "1.5.7"
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `next_schedule` - Unix timestamp of the next scheduled run
 
-IMPORT_FORMAT: $STACK_ID/$SCHEDULED_RUN_ID
+## Import
+```bash
+terraform import spacelift_scheduled_run.example $STACK_ID/$SCHEDULED_RUN_ID
+```
+
+## Notes
+* Either `every` or `at` must be specified, but not both
+* Cron expressions follow standard cron syntax
+* Runtime configuration allows customization per scheduled run

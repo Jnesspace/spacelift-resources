@@ -1,80 +1,47 @@
-METADATA:
-  resource_type: spacelift_worker_pool
-  provider: spacelift
-  service: execution
-  description: Worker pool for executing Spacelift jobs
-  version: latest
+# Resource: spacelift_worker_pool
 
-USAGE_TEMPLATE:
+## Description
+A worker pool is a logical group of workers that execute Spacelift runs. Worker pools allow you to control where and how your infrastructure code is executed.
+
+## Example Usage
 ```hcl
-resource "spacelift_worker_pool" "RESOURCE_NAME" {
-  name        = POOL_NAME
-  csr         = filebase64(CSR_PATH)    # Optional
-  description = DESCRIPTION             # Optional
-  labels      = [LABELS]               # Optional
+# Basic worker pool
+resource "spacelift_worker_pool" "main" {
+  name        = "main-workers"
+  description = "Primary worker pool for production workloads"
+}
+
+# Worker pool with CSR for private workers
+resource "spacelift_worker_pool" "private" {
+  name        = "private-workers"
+  description = "Private worker pool for secure workloads"
+  csr         = filebase64("${path.module}/worker.csr")
+  labels      = ["private", "secure"]
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Worker pool identifier
-      validation: Must be unique in account
+## Argument Reference
 
-  optional:
-    csr:
-      type: String
-      description: Base64 encoded certificate signing request
-      sensitive: true
-      note: Changes trigger token reset
-      
-    description:
-      type: String
-      description: Human-readable pool description
-      
-    labels:
-      type: Set[String]
-      description: Pool classification tags
-      default: []
-      
-    space_id:
-      type: String
-      description: Target space identifier
-      default: root or legacy space
+### Required Arguments
+* `name` - (Required) Unique worker pool identifier within the account
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    config:
-      type: String
-      description: Worker connection credentials
-      sensitive: true
-      generated: true
-      
-    private_key:
-      type: String
-      description: Base64 encoded private key
-      sensitive: true
-      generated: true
+### Optional Arguments
+* `description` - (Optional) Human-readable description of the worker pool
+* `csr` - (Optional) Base64-encoded certificate signing request for private workers
+* `labels` - (Optional) Set of labels for worker pool classification
+* `space_id` - (Optional) ID of the space the worker pool belongs to
 
-BEHAVIOR:
-  security:
-    - Uses certificate-based authentication
-    - Generates secure connection credentials
-    - Private key never transmitted after creation
-    
-  configuration:
-    - Can be assigned to specific spaces
-    - Supports labeling for organization
-    - CSR changes trigger security resets
-    
-  execution:
-    - Provides isolated execution environment
-    - Can be shared across stacks/modules
-    - Supports custom worker configurations
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `config` - Base64-encoded worker configuration (sensitive)
+* `private_key` - Base64-encoded private key for worker authentication (sensitive)
 
-IMPORT_FORMAT: $WORKER_POOL_ID
+## Import
+```bash
+terraform import spacelift_worker_pool.example $WORKER_POOL_ID
+```
+
+## Notes
+* Private workers require a CSR for certificate-based authentication
+* Configuration and private key are generated automatically and are sensitive
+* Worker pools can be assigned to specific stacks or modules

@@ -1,45 +1,38 @@
-spacelift_scheduled_delete_stack (Resource)
+# Resource: spacelift_scheduled_delete_stack
 
-spacelift_scheduled_delete_stack represents a scheduling configuration for a Stack. It will trigger a stack deletion task at the given timestamp.
-Example Usage
+## Description
+Schedules the automatic deletion of a stack at a specified time, useful for temporary environments or cleanup automation.
 
-resource "spacelift_stack" "k8s-core" {
-  // ...
-}
-
-// at a given timestamp (unix)
-resource "spacelift_scheduled_delete_stack" "k8s-core-delete" {
-  stack_id = spacelift_stack.k8s-core.id
-
-  at               = "1663336895"
+## Example Usage
+```hcl
+# Schedule stack deletion in 24 hours
+resource "spacelift_scheduled_delete_stack" "cleanup_dev" {
+  stack_id   = spacelift_stack.development.id
+  at         = timeadd(timestamp(), "24h")
   delete_resources = true
 }
 
-Schema
-Required
+# Schedule stack deletion for end of sprint
+resource "spacelift_scheduled_delete_stack" "sprint_cleanup" {
+  stack_id   = spacelift_stack.feature_branch.id
+  at         = "2024-12-31T23:59:59Z"
+  delete_resources = false
+}
+```
 
-    at (Number) Timestamp (unix timestamp) at which time the scheduling should happen.
-    stack_id (String) ID of the stack for which to set up scheduling
+## Argument Reference
 
-Optional
+### Required Arguments
+* `stack_id` - (Required) ID of the stack to schedule for deletion
+* `at` - (Required) Timestamp when the stack should be deleted (RFC3339 format)
 
-    delete_resources (Boolean) Indicates whether the resources of the stack should be deleted.
-    schedule_id (String) ID of the schedule
+### Optional Arguments
+* `delete_resources` - (Optional) Whether to run a destroy operation before deleting the stack. Defaults to `true`
 
-Read-Only
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-    id (String) The ID of this resource.
-
-Import
-
-Import is supported using the following syntax:
-
-terraform import spacelift_scheduled_delete_stack.ireland-kubeconfig $STACK_ID/$SCHEDULED_DELETE_STACK_ID
-
-On this page
-
-    Example Usage
-    Schema
-    Import
-
-Report an issue 
+## Notes
+* Stack deletion is irreversible once executed
+* If `delete_resources` is true, a destroy run will be executed first
+* The scheduled deletion can be canceled by removing this resource

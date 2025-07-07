@@ -1,102 +1,59 @@
-METADATA:
-  resource_type: spacelift_aws_integration_attachment
-  provider: spacelift
-  service: cloud_integration
-  description: Links AWS integrations to stacks or modules with access control
-  version: latest
+# Resource: spacelift_aws_integration_attachment
 
-USAGE_TEMPLATE:
+## Description
+Attaches an AWS integration to a stack or module, enabling AWS credential management with separate read and write permissions.
+
+## Example Usage
 ```hcl
-resource "spacelift_aws_integration_attachment" "RESOURCE_NAME" {
-  integration_id = INTEGRATION_ID
-  # One of the following must be set:
-  stack_id      = STACK_ID       # Optional if module_id is set
-  module_id     = MODULE_ID      # Optional if stack_id is set
+# Full access attachment
+resource "spacelift_aws_integration_attachment" "production" {
+  integration_id = spacelift_aws_integration.production.id
+  stack_id       = spacelift_stack.infrastructure.id
+  read           = true
+  write          = true
   
-  # Access control (both default to true):
-  read          = true           # Optional
-  write         = true          # Optional
-  
-  depends_on = [
-    REQUIRED_RESOURCES          # IAM role must exist first
-  ]
+  depends_on = [aws_iam_role.spacelift_role]
+}
+
+# Read-only attachment
+resource "spacelift_aws_integration_attachment" "monitoring" {
+  integration_id = spacelift_aws_integration.production.id
+  stack_id       = spacelift_stack.monitoring.id
+  read           = true
+  write          = false
+}
+
+# Module attachment
+resource "spacelift_aws_integration_attachment" "vpc_module" {
+  integration_id = spacelift_aws_integration.shared.id
+  module_id      = spacelift_module.vpc.id
+  read           = true
+  write          = true
 }
 ```
 
-ATTRIBUTES:
-  required:
-    integration_id:
-      type: String
-      description: AWS integration identifier
-      validation: Must exist in Spacelift
+## Argument Reference
 
-  optional:
-    stack_id:
-      type: String
-      description: Target stack identifier
-      validation: Must exist if module_id not set
-      note: Mutually exclusive with module_id
-      
-    module_id:
-      type: String
-      description: Target module identifier
-      validation: Must exist if stack_id not set
-      note: Mutually exclusive with stack_id
-      
-    read:
-      type: Boolean
-      description: Enable read operations
-      default: true
-      
-    write:
-      type: Boolean
-      description: Enable write operations
-      default: true
+### Required Arguments
+* `integration_id` - (Required) ID of the AWS integration to attach
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    attachment_id:
-      type: String
-      description: Internal attachment identifier
-      generated: true
+### Optional Arguments
+* `stack_id` - (Optional) ID of the stack to attach to. Mutually exclusive with `module_id`
+* `module_id` - (Optional) ID of the module to attach to. Mutually exclusive with `stack_id`
+* `read` - (Optional) Enable read operations. Defaults to `true`
+* `write` - (Optional) Enable write operations. Defaults to `true`
 
-BEHAVIOR:
-  permissions:
-    - Separate read/write control
-    - Both default to enabled
-    - Can restrict to read-only
-    - Can restrict to write-only
-    
-  validation:
-    - Tests role assumption
-    - Requires existing role
-    - Verifies permissions
-    - Checks target exists
-    
-  dependencies:
-    - IAM role must exist first
-    - Integration must be valid
-    - Target must be valid
-    
-  usage:
-    stack:
-      - Infrastructure deployments
-      - Resource management
-      - State storage
-    module:
-      - Module testing
-      - Resource verification
-      - Dependency checks
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `attachment_id` - Internal attachment identifier
 
-IMPORTANT_NOTES:
-  - Use depends_on to ensure role exists
-  - Role assumption tested during attachment
-  - One attachment per integration-target pair
-  - Cannot attach to both stack and module
+## Import
+```bash
+terraform import spacelift_aws_integration_attachment.example $INTEGRATION_ID/$STACK_ID
+```
 
-IMPORT_FORMAT: $INTEGRATION_ID/$TARGET_TYPE/$TARGET_ID
+## Notes
+* Either `stack_id` or `module_id` must be specified
+* IAM role must exist before attachment (use `depends_on`)
+* Role assumption is tested during attachment creation
 

@@ -1,170 +1,59 @@
-METADATA:
-  resource_type: spacelift_module
-  provider: spacelift
-  service: terraform_modules
-  description: Special stack type for testing and versioning Terraform modules
-  version: latest
+# Resource: spacelift_module
 
-USAGE_TEMPLATE:
+## Description
+A module is a special type of stack used for testing and versioning Terraform modules. Modules can be shared across multiple stacks and provide reusable infrastructure components.
+
+## Example Usage
 ```hcl
-resource "spacelift_module" "RESOURCE_NAME" {
-  # Required fields
-  repository = REPOSITORY_NAME
-  branch     = BRANCH_NAME
+# Explicit module configuration
+resource "spacelift_module" "vpc" {
+  name               = "vpc-module"
+  terraform_provider = "aws"
+  repository         = "terraform-aws-vpc"
+  branch             = "main"
+  description        = "Reusable VPC module for AWS"
+  administrative     = false
+}
 
-  # Optional fields with auto-inference
-  name               = MODULE_NAME               # Optional, inferred from repository
-  terraform_provider = PROVIDER_NAME            # Optional, inferred from repository
-  
-  # Common optional fields
-  description        = DESCRIPTION              # Optional
-  project_root      = MODULE_SOURCE_PATH       # Optional
-  administrative    = false                    # Optional
-  public           = false                    # Optional
+# Module with auto-inferred name and provider
+resource "spacelift_module" "auto_inferred" {
+  repository   = "terraform-aws-eks"  # Name and provider inferred
+  branch       = "main"
+  project_root = "modules/cluster"
+  description  = "EKS cluster module"
+  public       = true
 }
 ```
 
-ATTRIBUTES:
-  required:
-    branch:
-      type: String
-      description: Git branch to apply changes to
-      validation: Must be valid git branch name
-    
-    repository:
-      type: String
-      description: Repository name without owner part
-      validation: Must exist in VCS
-      note: Repository name format terraform-PROVIDER-NAME enables auto-inference
+## Argument Reference
 
-  optional:
-    name:
-      type: String
-      description: Module identifier
-      validation: Must be unique in account
-      note: Auto-inferred from repository if following naming convention
-      
-    terraform_provider:
-      type: String
-      description: Terraform provider used by module
-      note: Auto-inferred from repository if following naming convention
-      
-    administrative:
-      type: Boolean
-      description: Module can manage other resources
-      default: false
-      
-    description:
-      type: String
-      description: Human-readable module description
-      
-    project_root:
-      type: String
-      description: Directory containing module source
-      default: ""
-      
-    public:
-      type: Boolean
-      description: Public accessibility flag
-      default: false
-      immutable: true
-      
-    protect_from_deletion:
-      type: Boolean
-      description: Prevents accidental deletion
-      default: false
-      
-    shared_accounts:
-      type: Set[String]
-      description: Accounts with module access
-      default: []
-      
-    space_id:
-      type: String
-      description: Target space identifier
-      default: root or legacy space
-      
-    workflow_tool:
-      type: String
-      description: IaC execution tool
-      allowed_values: ["OPEN_TOFU", "TERRAFORM_FOSS", "CUSTOM"]
-      default: "TERRAFORM_FOSS"
+### Required Arguments
+* `repository` - (Required) Repository name without the owner part
+* `branch` - (Required) Git branch to apply changes to
 
-    worker_pool_id:
-      type: String
-      description: Worker pool for execution
-      note: Required for self-hosted instances
-      
-    labels:
-      type: Set[String]
-      description: Module classification tags
-      default: []
+### Optional Arguments
+* `name` - (Optional) Module name. Auto-inferred from repository if following terraform-{provider}-{name} convention
+* `terraform_provider` - (Optional) Terraform provider. Auto-inferred from repository if following naming convention
+* `description` - (Optional) Human-readable description of the module
+* `project_root` - (Optional) Directory containing the module source code
+* `administrative` - (Optional) Whether the module can manage other resources. Defaults to `false`
+* `public` - (Optional) Make module publicly accessible. Can only be set at creation. Defaults to `false`
+* `protect_from_deletion` - (Optional) Prevent accidental deletion. Defaults to `false`
+* `shared_accounts` - (Optional) List of accounts that can access the module
+* `space_id` - (Optional) ID of the space the module belongs to
+* `labels` - (Optional) Set of labels for module classification
+* `worker_pool_id` - (Optional) ID of the worker pool to use for module runs
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    aws_assume_role_policy_statement:
-      type: String
-      description: AWS IAM assume role policy for trust setup
-      generated: true
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `aws_assume_role_policy_statement` - AWS IAM assume role policy for trust setup
 
-INTEGRATIONS:
-  vcs_providers:
-    github:
-      default: true
-      
-    github_enterprise:
-      required:
-        namespace: String # GitHub org/user
-      optional:
-        id: String # Integration ID
-        
-    gitlab:
-      required:
-        namespace: String # GitLab namespace
-      optional:
-        id: String # Integration ID
-        
-    bitbucket_cloud:
-      required:
-        namespace: String # Bitbucket project
-      optional:
-        id: String # Integration ID
-        
-    bitbucket_datacenter:
-      required:
-        namespace: String # Bitbucket project
-      optional:
-        id: String # Integration ID
-        
-    azure_devops:
-      required:
-        project: String # Azure DevOps project
-      optional:
-        id: String # Integration ID
-        
-    raw_git:
-      required:
-        url: String # HTTPS repository URL
-        namespace: String # Display name
+## Import
+```bash
+terraform import spacelift_module.example $MODULE_ID
+```
 
-BEHAVIOR:
-  naming:
-    - Auto-infers name and provider from repository name
-    - Repository format: terraform-PROVIDER-NAME
-    - Custom names override auto-inference
-    
-  security:
-    - Public/private visibility set at creation
-    - Supports account sharing
-    - Deletion protection available
-    
-  execution:
-    - Runs in specified worker pool
-    - Supports different IaC tools
-    - Can initialize and test module code
-
-IMPORT_FORMAT: $MODULE_ID
+## Notes
+* Repository naming convention terraform-{provider}-{name} enables auto-inference
+* Public visibility can only be set during creation
+* Modules support version tags for consumption by stacks

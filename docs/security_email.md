@@ -1,25 +1,30 @@
+# Resource: spacelift_security_email
 
-spacelift_security_email (Resource)
+## Description
+Configures security notification email addresses to receive alerts about important security events in your Spacelift account.
 
-spacelift_security_email represents an email address that receives notifications about security issues in Spacelift.
-Example Usage
-
-resource "spacelift_security_email" "example" {
-  email = "user@example.com"
+## Example Usage
+```hcl
+# Primary security team email
+resource "spacelift_security_email" "security_team" {
+  email = "security@company.com"
 }
 
-Schema
-Required
+# Secondary security contact
+resource "spacelift_security_email" "security_backup" {
+  email = "security-backup@company.com"
+}
+```
 
-    email (String) Email address to which the security notifications are sent
+## Argument Reference
 
-Read-Only
+### Required Arguments
+* `email` - (Required) Email address to receive security notifications
 
-    id (String) The ID of this resource.
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-On this page
-
-    Example Usage
-    Schema
-
-Report an issue 
+## Notes
+* Multiple security emails can be configured
+* Security emails receive notifications about account security events
+* Email addresses must be valid and accessible

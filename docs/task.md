@@ -1,120 +1,59 @@
-METADATA:
-  resource_type: spacelift_task
-  provider: spacelift
-  service: core
-  description: Task execution configuration for Spacelift stacks
-  version: latest
+# Resource: spacelift_task
 
-USAGE_TEMPLATE:
+## Description
+A task represents a command execution on a Spacelift stack. Tasks allow you to run arbitrary commands within the stack's environment and configuration.
+
+## Example Usage
 ```hcl
-resource "spacelift_task" "RESOURCE_NAME" {
-  stack_id = STACK_ID
-  command  = COMMAND
-  init     = true    # Optional
+# Basic task
+resource "spacelift_task" "deploy" {
+  stack_id = spacelift_stack.app.id
+  command  = "terraform apply -auto-approve"
+  init     = true
+}
+
+# Task with custom configuration
+resource "spacelift_task" "cleanup" {
+  stack_id = spacelift_stack.app.id
+  command  = "./cleanup.sh"
+  init     = false
+  
+  keepers = {
+    trigger = timestamp()
+  }
+  
+  wait {
+    continue_on_state = ["finished", "failed"]
+    disabled          = false
+  }
 }
 ```
 
-ATTRIBUTES:
-  required:
-    command:
-      type: String
-      description: Command to execute
-      validation: Must be valid shell command
-    
-    stack_id:
-      type: String
-      description: Target stack identifier
-      validation: Must exist in Spacelift
+## Argument Reference
 
-  optional:
-    init:
-      type: Boolean
-      description: Controls stack initialization
-      default: true
-      
-    keepers:
-      type: Map[String]
-      description: Values that trigger resource recreation
-      default: {}
+### Required Arguments
+* `stack_id` - (Required) ID of the stack to run the task on
+* `command` - (Required) Command to execute
 
-    timeouts:
-      type: Block
-      description: Operation timeout settings
-      fields:
-        create:
-          type: String
-          description: Resource creation timeout
-          default: none
+### Optional Arguments
+* `init` - (Optional) Whether to initialize the stack before running. Defaults to `true`
+* `keepers` - (Optional) Map of values that trigger resource recreation when changed
+* `wait` - (Optional) Configuration for waiting for task completion
+  * `continue_on_state` - (Optional) States that allow continuation. Defaults to `["finished"]`
+  * `continue_on_timeout` - (Optional) Continue if task times out. Defaults to `false`
+  * `disabled` - (Optional) Disable waiting for completion. Defaults to `false`
+* `timeouts` - (Optional) Resource operation timeouts
+  * `create` - (Optional) Task creation timeout
 
-    wait:
-      type: Block
-      max: 1
-      description: Task completion wait configuration
-      fields:
-        continue_on_state:
-          type: Set[String]
-          description: States allowing continuation
-          default: ["finished"]
-          allowed_values:
-            - applying
-            - canceled
-            - confirmed
-            - destroying
-            - discarded
-            - failed
-            - finished
-            - initializing
-            - pending_review
-            - performing
-            - planning
-            - preparing_apply
-            - preparing_replan
-            - preparing
-            - queued
-            - ready
-            - replan_requested
-            - skipped
-            - stopped
-            - unconfirmed
-        
-        continue_on_timeout:
-          type: Boolean
-          description: Continue after timeout
-          default: false
-        
-        disabled:
-          type: Boolean
-          description: Disable wait behavior
-          default: false
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+## Import
+```bash
+terraform import spacelift_task.example $STACK_ID/$TASK_ID
+```
 
-BEHAVIOR:
-  execution:
-    - Runs in stack's environment
-    - Can initialize stack before execution
-    - Supports command execution monitoring
-    
-  lifecycle:
-    - Can be triggered by keeper changes
-    - Supports timeout configuration
-    - Can wait for completion states
-    
-  states:
-    terminal:
-      - finished
-      - failed
-      - discarded
-      - stopped
-    transitional:
-      - initializing
-      - planning
-      - applying
-      - performing
-    review:
-      - pending_review
-      - unconfirmed
+## Notes
+* Tasks run in the stack's configured environment with access to mounted files and environment variables
+* Use keepers to trigger task re-execution when dependencies change
+* Tasks can be configured to wait for specific completion states

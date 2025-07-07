@@ -1,85 +1,41 @@
-METADATA:
-  resource_type: spacelift_drift_detection
-  provider: spacelift
-  service: monitoring
-  description: Infrastructure drift detection and reconciliation
-  version: latest
+# Resource: spacelift_drift_detection
 
-USAGE_TEMPLATE:
+## Description
+Configures automatic drift detection for a stack, enabling periodic checks to identify when the actual infrastructure state differs from the Terraform state.
+
+## Example Usage
 ```hcl
-resource "spacelift_drift_detection" "RESOURCE_NAME" {
-  stack_id  = STACK_ID
-  schedule  = [CRON_EXPRS]
-  reconcile = true          # Optional
-  timezone  = TIMEZONE     # Optional, defaults to UTC
+# Daily drift detection
+resource "spacelift_drift_detection" "production" {
+  stack_id  = spacelift_stack.production.id
+  reconcile = true
+  schedule  = ["0 9 * * *"]  # Every day at 9 AM
+  timezone  = "UTC"
+}
+
+# Workday drift detection with reconciliation disabled
+resource "spacelift_drift_detection" "staging" {
+  stack_id  = spacelift_stack.staging.id
+  reconcile = false
+  schedule  = ["0 9 * * 1-5"]  # Weekdays at 9 AM
+  timezone  = "America/New_York"
 }
 ```
 
-ATTRIBUTES:
-  required:
-    stack_id:
-      type: String
-      description: Target stack identifier
-      validation: Must exist in Spacelift
-      
-    schedule:
-      type: List[String]
-      description: Cron schedule expressions
-      validation: Must be valid cron syntax
-      example: ["*/15 * * * *"]
+## Argument Reference
 
-  optional:
-    reconcile:
-      type: Boolean
-      description: Auto-trigger tracked run on drift
-      default: false
-      
-    timezone:
-      type: String
-      description: Schedule timezone
-      default: "UTC"
-      validation: Must be valid timezone name
-      
-    ignore_state:
-      type: Boolean
-      description: Check drift in any final state
-      default: false
-      note: If false, only checks 'Finished' state
+### Required Arguments
+* `stack_id` - (Required) ID of the stack to configure drift detection for
+* `reconcile` - (Required) Whether to automatically reconcile detected drift
+* `schedule` - (Required) List of cron expressions for drift detection runs
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Optional Arguments
+* `timezone` - (Optional) Timezone for schedule evaluation. Defaults to `"UTC"`
 
-BEHAVIOR:
-  detection:
-    - Runs proposed run on schedule
-    - Checks infrastructure state
-    - Reports detected drift
-    - Can monitor any final state
-    
-  reconciliation:
-    - Optional automatic fixes
-    - Triggers tracked run on drift
-    - Uses stack's configuration
-    - Inherits stack permissions
-    
-  monitoring:
-    - Regular schedule checks
-    - Timezone-aware scheduling
-    - Integrates with webhooks
-    - Reports drift status
-    
-  examples:
-    frequent_check:
-      schedule: ["*/15 * * * *"]
-      reconcile: true
-      description: "Check every 15 minutes, auto-fix"
-      
-    daily_monitor:
-      schedule: ["0 0 * * *"]
-      reconcile: false
-      description: "Daily check, manual fixes"
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-IMPORT_FORMAT: stack/$STACK_ID
+## Notes
+* Drift detection runs a plan to identify differences between desired and actual state
+* When `reconcile` is true, detected drift triggers an automatic apply
+* Schedule follows standard cron syntax for flexible timing configuration

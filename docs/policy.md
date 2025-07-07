@@ -1,90 +1,48 @@
-METADATA:
-  resource_type: spacelift_policy
-  provider: spacelift
-  service: governance
-  description: Customer-defined rules for Spacelift decision points
-  version: latest
+# Resource: spacelift_policy
 
-USAGE_TEMPLATE:
+## Description
+A policy is a collection of customer-defined rules written in Rego that are applied at specific decision points within Spacelift to control access, approvals, and automation behavior.
+
+## Example Usage
 ```hcl
-resource "spacelift_policy" "RESOURCE_NAME" {
-  name        = POLICY_NAME
-  body        = file("${path.module}/policies/policy.rego")
-  type        = POLICY_TYPE
-  description = DESCRIPTION    # Optional
+# Plan policy to prevent weekend deployments
+resource "spacelift_policy" "no_weekend_deploys" {
+  name = "No Weekend Deployments"
+  body = file("${path.module}/policies/no-weekend-deploys.rego")
+  type = "PLAN"
+  description = "Blocks deployments on weekends"
+}
+
+# Access policy for team permissions
+resource "spacelift_policy" "team_access" {
+  name = "Team Access Control"
+  body = file("${path.module}/policies/team-access.rego")
+  type = "ACCESS"
+  space_id = spacelift_space.team.id
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Policy identifier
-      validation: Must be unique in account
-      
-    body:
-      type: String
-      description: Rego policy content
-      validation: Must be valid Rego syntax
-      
-    type:
-      type: String
-      description: Policy decision point
-      allowed_values:
-        - ACCESS         # Resource access control
-        - APPROVAL      # Run approval rules
-        - GIT_PUSH      # VCS push handling
-        - INITIALIZATION # Stack setup
-        - LOGIN         # Authentication rules
-        - PLAN          # Terraform plan rules
-        - TASK          # Task execution rules
-        - TRIGGER       # Run trigger rules
-        - NOTIFICATION  # Notification rules
-      deprecated_values:
-        - STACK_ACCESS  # Use ACCESS instead
-        - TASK_RUN     # Use TASK instead
-        - TERRAFORM_PLAN # Use PLAN instead
+## Argument Reference
 
-  optional:
-    description:
-      type: String
-      description: Human-readable policy description
-      
-    labels:
-      type: Set[String]
-      description: Policy classification tags
-      default: []
-      
-    space_id:
-      type: String
-      description: Target space identifier
-      default: root or legacy space
+### Required Arguments
+* `name` - (Required) Unique policy identifier within the account
+* `body` - (Required) Rego policy content defining the rules
+* `type` - (Required) Policy decision point. Valid values: `ACCESS`, `APPROVAL`, `GIT_PUSH`, `INITIALIZATION`, `LOGIN`, `PLAN`, `TASK`, `TRIGGER`, `NOTIFICATION`
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Optional Arguments
+* `description` - (Optional) Human-readable description of the policy
+* `labels` - (Optional) Set of labels for policy classification
+* `space_id` - (Optional) ID of the space the policy belongs to. Defaults to root space
 
-BEHAVIOR:
-  execution:
-    - Evaluated at specific decision points
-    - Uses Rego policy language
-    - Must return valid decision result
-    
-  application:
-    - Requires explicit attachment to resources
-    - Can be shared across multiple resources
-    - Supports hierarchical organization
-    
-  scope:
-    - Can control multiple resource types
-    - Supports space-level isolation
-    - Enables granular access control
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-  integrations:
-    - Works with stacks and modules
-    - Integrates with VCS operations
-    - Controls automation workflows
+## Import
+```bash
+terraform import spacelift_policy.example $POLICY_ID
+```
 
-IMPORT_FORMAT: $POLICY_ID
+## Notes
+* Policies must be written in valid Rego syntax
+* Different policy types are evaluated at different points in the Spacelift workflow
+* LOGIN policies apply globally and cannot be attached to individual stacks/modules

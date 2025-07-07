@@ -1,94 +1,54 @@
-METADATA:
-  resource_type: spacelift_idp_group_mapping
-  provider: spacelift
-  service: access_control
-  description: Maps Identity Provider groups to Spacelift permissions
-  version: latest
+# Resource: spacelift_idp_group_mapping
 
-USAGE_TEMPLATE:
+## Description
+Maps Identity Provider user groups to Spacelift permissions, allowing group-based access control where all users in a group inherit the specified permissions.
+
+## Example Usage
 ```hcl
-resource "spacelift_idp_group_mapping" "RESOURCE_NAME" {
-  name        = GROUP_NAME
-  description = DESCRIPTION    # Optional
+# Admin group mapping
+resource "spacelift_idp_group_mapping" "admins" {
+  name        = "spacelift-admins"
+  description = "Administrator access for Spacelift admins group"
   
   policy {
-    space_id = SPACE_ID
-    role     = ROLE_TYPE     # READ, WRITE, or ADMIN
+    space_id = "root"
+    role     = "ADMIN"
+  }
+}
+
+# Development team mapping
+resource "spacelift_idp_group_mapping" "developers" {
+  name        = "development-team"
+  description = "Development team access"
+  
+  policy {
+    space_id = spacelift_space.development.id
+    role     = "WRITE"
+  }
+  
+  policy {
+    space_id = spacelift_space.staging.id
+    role     = "READ"
   }
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: IdP group identifier
-      validation: Must be unique in account
-      
-    policy:
-      type: Block Set
-      min: 1
-      description: Space access policies
-      fields:
-        space_id:
-          type: String
-          description: Target space identifier
-          required: true
-          validation: Must exist in Spacelift
-        role:
-          type: String
-          description: Access level in space
-          required: true
-          allowed_values:
-            - READ
-            - WRITE
-            - ADMIN
+## Argument Reference
 
-  optional:
-    description:
-      type: String
-      description: Human-readable group description
-      default: ""
+### Required Arguments
+* `name` - (Required) Unique group name within the account (should match IdP group name)
+* `policy` - (Required) One or more space access policies
+  * `space_id` - (Required) ID of the space to grant access to
+  * `role` - (Required) Access level. Valid values: `READ`, `WRITE`, `ADMIN`
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Optional Arguments
+* `description` - (Optional) Human-readable description of the group mapping
 
-BEHAVIOR:
-  permission_inheritance:
-    - Group permissions apply to all members
-    - Individual permissions take precedence
-    - Higher individual roles override group roles
-    
-  roles:
-    READ:
-      - View resources
-      - Access configurations
-      - Read logs
-    WRITE:
-      - Modify resources
-      - Update configurations
-      - Trigger operations
-    ADMIN:
-      - Full control
-      - User management
-      - Policy configuration
-    
-  validation:
-    - Group name must be unique
-    - Space must exist
-    - Role must be valid
-    - At least one policy required
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-INTEGRATION:
-  identity_provider:
-    - Syncs group memberships
-    - Manages user associations
-    - Updates permissions
-    
-  policies:
-    - Define group access rights
-    - Control space permissions
-    - Set role-based access
+## Notes
+* Group name should match the group name from your Identity Provider
+* Multiple policies can be defined for access to different spaces
+* User permissions take precedence over group permissions if higher
+* All group members inherit the defined permissions

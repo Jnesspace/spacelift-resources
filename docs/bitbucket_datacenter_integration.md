@@ -1,133 +1,61 @@
-METADATA:
-  resource_type: spacelift_bitbucket_datacenter_integration
-  provider: spacelift
-  service: vcs_integration
-  description: Bitbucket Data Center integration configuration
-  version: latest
+# Resource: spacelift_bitbucket_datacenter_integration
 
-USAGE_TEMPLATE:
+## Description
+Configures integration with Bitbucket Data Center (self-hosted Bitbucket) to enable repository access and webhook functionality for Spacelift stacks and modules.
+
+## Example Usage
 ```hcl
-resource "spacelift_bitbucket_datacenter_integration" "RESOURCE_NAME" {
-  name             = INTEGRATION_NAME
-  api_host         = API_HOST         # URL or private://hostname
-  user_facing_host = UI_HOST
-  username         = USERNAME
-  access_token     = ACCESS_TOKEN
-  is_default       = false           # Optional
-  space_id         = SPACE_ID        # Optional, defaults to root
-  vcs_checks       = CHECK_TYPE      # Optional
+# Public Bitbucket Data Center integration
+resource "spacelift_bitbucket_datacenter_integration" "bitbucket_dc" {
+  name             = "bitbucket-datacenter"
+  api_host         = "https://bitbucket.company.com"
+  user_facing_host = "https://bitbucket.company.com"
+  username         = "spacelift-user"
+  access_token     = var.bitbucket_token
+  is_default       = true
+  space_id         = "root"
+}
+
+# Private Bitbucket Data Center with VCS agent
+resource "spacelift_bitbucket_datacenter_integration" "bitbucket_private" {
+  name             = "bitbucket-private"
+  api_host         = "private://bitbucket-internal"
+  user_facing_host = "https://bitbucket.internal.company.com"
+  username         = "spacelift-bot"
+  access_token     = var.bitbucket_private_token
+  description      = "Internal Bitbucket Data Center"
+  labels           = ["internal", "bitbucket"]
+  vcs_checks       = "AGGREGATED"
 }
 ```
 
-ATTRIBUTES:
-  required:
-    name:
-      type: String
-      description: Integration identifier
-      validation: Must be unique
-      
-    api_host:
-      type: String
-      description: API endpoint URL
-      validation: Valid URL or private:// scheme
-      
-    user_facing_host:
-      type: String
-      description: UI endpoint URL
-      validation: Valid HTTPS URL
-      
-    username:
-      type: String
-      description: Authentication username
-      validation: Valid Bitbucket user
-      
-    access_token:
-      type: String
-      description: Authentication token
-      validation: Valid Bitbucket token
-      sensitive: true
-      
-    is_default:
-      type: Boolean
-      description: Default integration status
-      validation: true/false
+## Argument Reference
 
-  optional:
-    space_id:
-      type: String
-      description: Target space identifier
-      default: "root"
-      validation: Must exist in Spacelift
-      
-    description:
-      type: String
-      description: Human-readable description
-      default: ""
-      
-    labels:
-      type: Set[String]
-      description: Classification tags
-      default: []
-      
-    vcs_checks:
-      type: String
-      description: VCS check configuration
-      default: "INDIVIDUAL"
-      allowed_values:
-        - INDIVIDUAL
-        - AGGREGATED
-        - ALL
+### Required Arguments
+* `name` - (Required) Unique integration identifier
+* `api_host` - (Required) Bitbucket API endpoint URL or `private://hostname` for VCS agent access
+* `user_facing_host` - (Required) Bitbucket UI URL for user-facing links
+* `username` - (Required) Bitbucket username for authentication
+* `access_token` - (Required) Bitbucket access token or app password
+* `is_default` - (Required) Whether this is the default Bitbucket integration
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
-      
-    webhook_url:
-      type: String
-      description: Repository webhook URL
-      generated: true
-      
-    webhook_secret:
-      type: String
-      description: Webhook verification secret
-      generated: true
-      sensitive: true
+### Optional Arguments
+* `description` - (Optional) Human-readable description of the integration
+* `labels` - (Optional) Set of labels for integration classification
+* `space_id` - (Optional) ID of the space the integration belongs to. Defaults to `"root"`
+* `vcs_checks` - (Optional) VCS status check configuration. Valid values: `INDIVIDUAL`, `AGGREGATED`, `ALL`. Defaults to `INDIVIDUAL`
 
-BEHAVIOR:
-  connectivity:
-    public:
-      - Direct HTTPS access
-      - Standard API endpoints
-      - UI accessible publicly
-      
-    private:
-      - VCS agent pool required
-      - private:// URL scheme
-      - Internal network access
-      
-  authentication:
-    - Username/token based
-    - Token stored securely
-    - Webhook verification
-    
-  webhooks:
-    - Automatic configuration
-    - Secret key generation
-    - Event verification
-    
-  vcs_checks:
-    INDIVIDUAL:
-      - Separate status checks
-      - Per-task reporting
-      
-    AGGREGATED:
-      - Combined status check
-      - Single report entry
-      
-    ALL:
-      - Both check types
-      - Complete reporting
+### Read-Only Arguments
+* `id` - Unique resource identifier
+* `webhook_url` - URL for Bitbucket webhooks
+* `webhook_secret` - Secret for webhook verification (sensitive)
 
-IMPORT_FORMAT: $INTEGRATION_ID
+## Import
+```bash
+terraform import spacelift_bitbucket_datacenter_integration.example $INTEGRATION_ID
+```
+
+## Notes
+* Default integrations must be in the root space
+* Private access requires VCS agent pool configuration
+* Webhook URL and secret are automatically generated for repository configuration

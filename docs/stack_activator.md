@@ -1,71 +1,33 @@
-METADATA:
-  resource_type: spacelift_stack_activator
-  provider: spacelift
-  service: lifecycle
-  description: Controls stack activation state
-  version: latest
+# Resource: spacelift_stack_activator
 
-USAGE_TEMPLATE:
+## Description
+Controls the activation state of a Spacelift stack, allowing you to enable or disable stack operations programmatically.
+
+## Example Usage
 ```hcl
-resource "spacelift_stack_activator" "RESOURCE_NAME" {
-  stack_id = STACK_ID
-  enabled  = true    # Required, controls stack state
+# Enable a stack
+resource "spacelift_stack_activator" "production" {
+  stack_id = spacelift_stack.production.id
+  enabled  = true
+}
+
+# Conditionally activate stack based on environment
+resource "spacelift_stack_activator" "feature_stack" {
+  stack_id = spacelift_stack.feature.id
+  enabled  = var.enable_feature_stack
 }
 ```
 
-ATTRIBUTES:
-  required:
-    stack_id:
-      type: String
-      description: Target stack identifier
-      validation: Must exist in Spacelift
-      
-    enabled:
-      type: Boolean
-      description: Stack activation state
-      validation: Must be true or false
+## Argument Reference
 
-  computed:
-    id:
-      type: String
-      description: Unique resource identifier
-      generated: true
+### Required Arguments
+* `stack_id` - (Required) ID of the stack to control
+* `enabled` - (Required) Whether the stack should be enabled
 
-BEHAVIOR:
-  activation:
-    - Controls stack processing
-    - Enables/disables operations
-    - Affects all stack functions
-    
-  state_management:
-    - Independent of stack definition
-    - Immediate state change
-    - Reversible operation
-    
-  effects:
-    enabled_true:
-      - Allows stack operations
-      - Enables scheduled runs
-      - Processes webhooks
-      - Allows manual triggers
-      
-    enabled_false:
-      - Blocks stack operations
-      - Disables scheduled runs
-      - Ignores webhooks
-      - Prevents manual triggers
+### Read-Only Arguments
+* `id` - Unique resource identifier
 
-PATTERNS:
-  maintenance:
-    example:
-      - Disable for maintenance
-      - Perform updates
-      - Re-enable when ready
-    benefit: Controlled maintenance windows
-    
-  automation:
-    example:
-      - Conditional activation
-      - Environment-based control
-      - Scheduled availability
-    benefit: Automated stack management
+## Notes
+* Disabled stacks cannot execute runs, tasks, or scheduled operations
+* This resource provides independent control over stack state
+* Useful for maintenance windows or conditional stack activation

@@ -1,60 +1,41 @@
-# spacelift_audit_trail_webhook
+# Resource: spacelift_audit_trail_webhook
 
-METADATA:
-  resource_type: spacelift_audit_trail_webhook
-  provider: spacelift
-  service: webhooks
-  description: Webhook endpoint for Spacelift audit event notifications
-  version: latest
+## Description
+Configures a webhook endpoint to receive audit trail events from Spacelift, enabling integration with external logging, monitoring, or compliance systems.
 
-USAGE_TEMPLATE:
+## Example Usage
 ```hcl
-resource "spacelift_audit_trail_webhook" "RESOURCE_NAME" {
-  endpoint = URL_ENDPOINT
-  enabled  = BOOLEAN
-  secret   = SECRET_KEY
+# Audit trail webhook for compliance logging
+resource "spacelift_audit_trail_webhook" "compliance" {
+  endpoint    = "https://compliance.company.com/audit/spacelift"
+  secret      = var.audit_webhook_secret
+  include_runs = true
+  enabled     = true
+}
+
+# Security monitoring webhook
+resource "spacelift_audit_trail_webhook" "security" {
+  endpoint    = "https://security-monitoring.company.com/webhooks/spacelift"
+  secret      = var.security_webhook_secret
+  include_runs = false
+  enabled     = true
 }
 ```
 
-ATTRIBUTES:
-  required:
-    enabled:
-      type: Boolean
-      description: Controls webhook activation status
-      default: false
-      validation: none
-    
-    endpoint:
-      type: String
-      description: Destination URL for POST requests
-      validation: Must be valid URL format
-    
-    secret:
-      type: String
-      description: Secret key for request authentication
-      sensitive: true
-      validation: none
+## Argument Reference
 
-  optional:
-    custom_headers:
-      type: Map[String]
-      description: Additional HTTP headers for requests
-      default: {}
-      validation: Valid HTTP headers
-    
-    include_runs:
-      type: Boolean
-      description: Include run data in webhook payload
-      default: false
-      validation: none
+### Required Arguments
+* `endpoint` - (Required) Destination URL for audit trail webhook requests
+* `enabled` - (Required) Whether the webhook is active
 
-  computed:
-    id:
-      type: String
-      description: Unique identifier for the resource
-      generated: true
+### Optional Arguments
+* `secret` - (Optional) Secret for request signature verification
+* `include_runs` - (Optional) Whether to include run events in audit trail. Defaults to `true`
 
-BEHAVIOR:
-  - Webhook is inactive until enabled=true is set
-  - Secret is never returned in state or outputs
-  - POST requests include X-Spacelift-Signature header
+### Read-Only Arguments
+* `id` - Unique resource identifier
+
+## Notes
+* Audit trail webhooks receive all account-level security and administrative events
+* Secret is used for request signing and is not returned after creation
+* Run events can be excluded to reduce webhook volume
