@@ -22,9 +22,9 @@ type JSONRPCRequest struct {
 }
 
 type JSONRPCResponse struct {
-	JSONRPC string      `json:"jsonrpc"`
-	ID      interface{} `json:"id,omitempty"`
-	Result  interface{} `json:"result,omitempty"`
+	JSONRPC string        `json:"jsonrpc"`
+	ID      interface{}   `json:"id,omitempty"`
+	Result  interface{}   `json:"result,omitempty"`
 	Error   *JSONRPCError `json:"error,omitempty"`
 }
 
@@ -113,7 +113,7 @@ func main() {
 
 	// Create scanner for stdin
 	scanner := bufio.NewScanner(os.Stdin)
-	
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.TrimSpace(line) == "" {
@@ -137,6 +137,8 @@ func main() {
 }
 
 func handleRequest(request *JSONRPCRequest) {
+	// Log the method and params of every incoming request
+	log.Printf("Received request: method=%s, params=%v", request.Method, request.Params)
 	switch request.Method {
 	case "initialize":
 		handleInitialize(request)
@@ -176,7 +178,7 @@ func handleInitialize(request *JSONRPCRequest) {
 
 func handleResourcesList(request *JSONRPCRequest) {
 	var mcpResources []Resource
-	
+
 	for _, doc := range resources {
 		resource := Resource{
 			URI:         fmt.Sprintf("spacelift://docs/%s", doc.Name),
@@ -190,7 +192,7 @@ func handleResourcesList(request *JSONRPCRequest) {
 	result := map[string]interface{}{
 		"resources": mcpResources,
 	}
-	
+
 	sendResponse(request.ID, result)
 }
 
@@ -214,7 +216,7 @@ func handleResourcesRead(request *JSONRPCRequest) {
 	}
 
 	resourceName := strings.TrimPrefix(uri, "spacelift://docs/")
-	
+
 	// Find the resource
 	for _, doc := range resources {
 		if doc.Name == resourceName {
@@ -262,7 +264,7 @@ func handleToolsList(request *JSONRPCRequest) {
 			Name:        "list_categories",
 			Description: "List all available resource categories in the Spacelift documentation",
 			InputSchema: map[string]interface{}{
-				"type": "object",
+				"type":       "object",
 				"properties": map[string]interface{}{},
 			},
 		},
@@ -285,7 +287,7 @@ func handleToolsList(request *JSONRPCRequest) {
 	result := map[string]interface{}{
 		"tools": tools,
 	}
-	
+
 	sendResponse(request.ID, result)
 }
 
@@ -373,7 +375,7 @@ func handleSearchDocs(id interface{}, args map[string]interface{}) {
 
 func handleListCategories(id interface{}, args map[string]interface{}) {
 	categoryCount := make(map[string]int)
-	
+
 	for _, resource := range resources {
 		categoryCount[resource.Type]++
 	}
@@ -467,7 +469,7 @@ func sendToolResult(id interface{}, content string, isError bool) {
 
 func loadResources() {
 	docsDir := "./docs"
-	
+
 	err := filepath.WalkDir(docsDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -518,7 +520,7 @@ func loadResources() {
 
 func parseDocContent(content string) (title, description, resourceType string, deprecated bool) {
 	lines := strings.Split(content, "\n")
-	
+
 	// Extract title (first # heading)
 	for _, line := range lines {
 		if strings.HasPrefix(line, "# ") {
@@ -550,7 +552,7 @@ func parseDocContent(content string) (title, description, resourceType string, d
 	// Determine resource type based on content and name
 	contentUpper := strings.ToUpper(content)
 	titleUpper := strings.ToUpper(title)
-	
+
 	switch {
 	case strings.Contains(titleUpper, "INTEGRATION") || strings.Contains(contentUpper, "INTEGRATION"):
 		resourceType = "integration"
