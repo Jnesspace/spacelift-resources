@@ -2,7 +2,11 @@
 
 Super quick unofficial reference of terraform resources to save time working with AI agents, saving time looking at the resources when configuring spacelift with Tofu/Terraform
 
+Fork and add to your local machine. 
 
+Tell agent to send requests using the terminal in agent mode, with any LLM IDE
+
+If you cant get it to work ask the agent how to use it :) 
 ---
 
 ## 🚀 Quick Start
