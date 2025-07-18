@@ -1,6 +1,7 @@
 # Spacelift Documentation MCP Server
 
-A Model Context Protocol (MCP) server that provides agents (like GitHub Copilot, Cursor, or LibreChat) with searchable access to Spacelift Terraform provider documentation.
+Super quick unofficial reference of terraform resources to save time working with AI agents, saving time looking at the resources when configuring spacelift with Tofu/Terraform
+
 
 ---
 
@@ -59,25 +60,6 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_categ
 
 ---
 
-## ⚙️ MCP Server Configuration (for Cursor/Copilot)
-
-Add this to your `settings.json` or `.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "spacelift-docs": {
-      "command": "go",
-      "args": ["run", "main.go"],
-      "cwd": "/Users/jakenesler/Documents/GitHub/spacelift-resources"
-    }
-  }
-}
-```
-- The server name (`spacelift-docs`) must match your prompt: `@spacelift-docs`
-- `cwd` should be the absolute path to your project directory
-
----
 
 ## 📝 Project Structure
 
@@ -109,7 +91,3 @@ Add this to your `settings.json` or `.cursor/mcp.json`:
 | Permission errors            | Make sure your user can read the files and run the `go` command|
 
 ---
-
-## 📚 References
-- [Model Context Protocol (MCP) Documentation](https://www.librechat.ai/docs/configuration/librechat_yaml/object_structure/mcp_servers)
-- [Spacelift Documentation](https://docs.spacelift.io/)
