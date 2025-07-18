@@ -13,11 +13,6 @@ If you cant get it to work ask the agent how to use it :)
 
 ### 1. Run the MCP Server and Test from Terminal
 
-```sh
-go run main.go
-```
-
-Or, for a one-off request:
 
 ```sh
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_categories","arguments":{}}}' | go run main.go
@@ -82,16 +77,3 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_categ
 - Tool schemas and logic are defined in `main.go`.
 - To add or change tools, edit the `handleToolsList` and related handler functions.
 
----
-
-## 🐞 Troubleshooting
-
-| Issue                        | Solution                                                      |
-|------------------------------|---------------------------------------------------------------|
-| Server not starting          | Ensure Go is installed and you’re in the correct directory    |
-| Agent can’t find server      | Double-check your config (`cwd`, `command`, and server name)  |
-| No tools showing in agent    | Use explicit prompts (e.g., `@spacelift-docs list_categories`)|
-| No documentation found       | Ensure the `docs/` directory contains the markdown files      |
-| Permission errors            | Make sure your user can read the files and run the `go` command|
-
----
