@@ -1,27 +1,63 @@
 # Spacelift Documentation MCP Server
 
-Super quick unofficial reference of terraform resources to save time working with AI agents, saving time looking at the resources when configuring spacelift with Tofu/Terraform
+A Model Context Protocol (MCP) server that provides agents (like GitHub Copilot, Cursor, or LibreChat) with searchable access to Spacelift Terraform provider documentation.
 
-Fork and add to your local machine. 
-
-Tell agent to send requests using the terminal in agent mode, with any LLM IDE
-
-If you cant get it to work ask the agent how to use it :) 
 ---
 
 ## 🚀 Quick Start
 
 ### 1. Run the MCP Server and Test from Terminal
 
+```sh
+go run main.go
+```
+
+Or, for a one-off request:
 
 ```sh
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_categories","arguments":{}}}' | go run main.go
 ```
 
-### 2. Example Prompts for Agents
-- Ask Copilot: `How do I create an AWS integration in Spacelift?`
-- Get resource info: `Show me the spacelift_stack resource documentation`
-- Search docs: `What are the available Spacelift webhook options?`
+---
+
+## 📡 Example JSON-RPC Requests
+
+### List Available Tools
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list"
+}
+```
+
+### Call a Tool (e.g., list_categories)
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "list_categories",
+    "arguments": {}
+  }
+}
+```
+
+### Call a Tool with Arguments (e.g., search_docs)
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "search_docs",
+    "arguments": {
+      "query": "aws"
+    }
+  }
+}
+```
 
 ---
 
@@ -37,11 +73,11 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_categ
 
 ## 🤖 Available Tools
 
-| Tool Name             | Description                                                      | Example Prompt                                 |
-|----------------------|------------------------------------------------------------------|------------------------------------------------|
-| `search_docs`        | Search docs for resources matching a query                       | `@spacelift-docs search_docs query="aws"`    |
-| `list_categories`    | List all available resource categories                           | `@spacelift-docs list_categories`              |
-| `get_resource_by_name`| Get detailed info about a specific resource by name              | `@spacelift-docs get_resource_by_name name="stack"` |
+| Tool Name             | Description                                                      |
+|----------------------|------------------------------------------------------------------|
+| `search_docs`        | Search docs for resources matching a query                       |
+| `list_categories`    | List all available resource categories                           |
+| `get_resource_by_name`| Get detailed info about a specific resource by name              |
 
 ---
 
@@ -59,6 +95,25 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_categ
 
 ---
 
+## ⚙️ MCP Server Configuration (for Cursor/Copilot)
+
+Add this to your `settings.json` or `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "spacelift-docs": {
+      "command": "go",
+      "args": ["run", "main.go"],
+      "cwd": "/Users/jakenesler/Documents/GitHub/spacelift-resources"
+    }
+  }
+}
+```
+- The server name (`spacelift-docs`) must match your prompt: `@spacelift-docs`
+- `cwd` should be the absolute path to your project directory
+
+---
 
 ## 📝 Project Structure
 
@@ -76,4 +131,22 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_categ
 - All `.md` files in `docs/` are loaded as resources.
 - Tool schemas and logic are defined in `main.go`.
 - To add or change tools, edit the `handleToolsList` and related handler functions.
+
+---
+
+## 🐞 Troubleshooting
+
+| Issue                        | Solution                                                      |
+|------------------------------|---------------------------------------------------------------|
+| Server not starting          | Ensure Go is installed and you’re in the correct directory    |
+| Agent can’t find server      | Double-check your config (`cwd`, `command`, and server name)  |
+| No tools showing in agent    | Use explicit prompts (e.g., `@spacelift-docs list_categories`)|
+| No documentation found       | Ensure the `docs/` directory contains the markdown files      |
+| Permission errors            | Make sure your user can read the files and run the `go` command|
+
+---
+
+## 📚 References
+- [Model Context Protocol (MCP) Documentation](https://www.librechat.ai/docs/configuration/librechat_yaml/object_structure/mcp_servers)
+- [Spacelift Documentation](https://docs.spacelift.io/)
 
